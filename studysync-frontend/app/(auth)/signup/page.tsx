@@ -54,7 +54,7 @@ export default function SignupPage() {
       </motion.div>
 
       <motion.form variants={staggerItem} onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3.5">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="First name"
             placeholder="Alex"

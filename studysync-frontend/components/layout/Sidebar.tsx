@@ -82,7 +82,7 @@ export function Sidebar() {
             <Link key={item.href} href={item.href}>
               <div
                 className={cn(
-                  'relative flex items-center gap-3 px-3 h-8 rounded-md transition-colors',
+                  'relative flex items-center gap-3 px-3 h-9 rounded-md transition-colors',
                   active
                     ? 'text-text-primary font-medium'
                     : 'text-text-secondary hover:bg-surface-elevated hover:text-text-primary'

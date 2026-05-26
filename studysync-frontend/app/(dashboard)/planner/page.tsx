@@ -32,7 +32,7 @@ function PlanGrid({ plan }: { plan: StudyBlock[] }) {
   });
 
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       {DAYS.map(day => {
         const block = plan.find(b => b.day === day);
         return (
@@ -165,7 +165,7 @@ export default function PlannerPage() {
 
         {mutation.isPending && (
           <motion.div variants={staggerItem} className="mb-8">
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
               {DAYS.map(d => (
                 <div key={d} className="space-y-1.5">
                   <Skeleton className="h-4 rounded" />

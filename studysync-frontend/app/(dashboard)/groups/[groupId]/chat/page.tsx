@@ -69,7 +69,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex relative overflow-hidden">
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
@@ -217,15 +217,29 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Members sidebar */}
+      {/* Mobile backdrop */}
       <AnimatePresence>
         {showMembers && (
           <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 200, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-surface-card border-l border-surface-border overflow-hidden flex-shrink-0"
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden absolute inset-0 bg-black/40 z-30"
+            onClick={() => setShowMembers(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Members sidebar — absolute overlay (no chat squeeze on mobile) */}
+      <AnimatePresence>
+        {showMembers && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="absolute right-0 top-0 h-full w-56 bg-surface-card border-l border-surface-border overflow-y-auto z-40"
           >
             <div className="p-4">
               <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-3">Members</h3>

@@ -208,7 +208,7 @@ export default function GradesPage() {
           {showAdd && (
             <motion.div variants={popIn} initial="hidden" animate="visible" exit="hidden" className="mb-6">
               <GlassCard className="p-4" hover={false}>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     className="flex-1 bg-surface-elevated border border-surface-border rounded-md px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-brand"
                     placeholder="Course name (e.g. CS401)"
@@ -216,8 +216,8 @@ export default function GradesPage() {
                     onChange={e => setNewCourse(p => ({ ...p, course_name: e.target.value }))}
                   />
                   <input
-                    className="w-24 bg-surface-elevated border border-surface-border rounded-md px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-brand"
-                    placeholder="Target"
+                    className="sm:w-24 bg-surface-elevated border border-surface-border rounded-md px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-brand"
+                    placeholder="Target grade"
                     value={newCourse.target_grade}
                     onChange={e => setNewCourse(p => ({ ...p, target_grade: e.target.value }))}
                   />

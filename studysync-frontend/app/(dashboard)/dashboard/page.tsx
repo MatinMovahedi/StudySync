@@ -90,14 +90,14 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="flex items-center border border-surface-border rounded-md divide-x divide-surface-border mb-7"
+        className="flex items-center border border-surface-border rounded-md divide-x divide-surface-border mb-7 overflow-x-auto"
       >
         {[
           { label: 'Study hours', value: `${user?.profile?.total_study_hours ?? 0}`, unit: 'hrs' },
           { label: 'Groups', value: `${groupList.length}`, unit: 'active' },
           { label: 'Sessions', value: `${user?.profile?.total_sessions ?? 0}`, unit: 'done' },
         ].map((stat) => (
-          <div key={stat.label} className="flex-1 px-4 py-3">
+          <div key={stat.label} className="flex-1 min-w-[80px] px-3 sm:px-4 py-3">
             <div className="text-xl font-bold text-text-primary tabular-nums">{stat.value}
               <span className="text-sm font-normal text-text-muted ml-1">{stat.unit}</span>
             </div>
@@ -106,7 +106,7 @@ export default function DashboardPage() {
         ))}
         {/* XP widget */}
         {gamification && (
-          <Link href="/leaderboard" className="flex-1 px-4 py-3 hover:bg-surface-elevated transition-colors group">
+          <Link href="/leaderboard" className="flex-1 min-w-[80px] px-3 sm:px-4 py-3 hover:bg-surface-elevated transition-colors group">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5">
                 <Trophy className="w-3 h-3 text-brand" />

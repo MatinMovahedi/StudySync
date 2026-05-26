@@ -99,6 +99,12 @@ export default function SchedulePage() {
   const [now, setNow] = useState(new Date());
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<StudySession | null>(null);
+  const [mobileDayIdx, setMobileDayIdx] = useState(() => {
+    const d = new Date();
+    const wStart = startOfWeek(d, { weekStartsOn: 1 });
+    const diff = Math.floor((d.getTime() - wStart.getTime()) / 86400000);
+    return Math.max(0, Math.min(6, diff));
+  });
   const gridRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
@@ -106,6 +112,12 @@ export default function SchedulePage() {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const d = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const idx = d.findIndex(day => isToday(day));
+    setMobileDayIdx(idx >= 0 ? idx : 0);
+  }, [weekStart]);
 
   useEffect(() => {
     if (gridRef.current) {
@@ -197,8 +209,11 @@ export default function SchedulePage() {
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-xs text-text-muted tabular-nums">
+            <span className="text-xs text-text-muted tabular-nums hidden md:inline">
               {format(weekStart, 'MMM d')} – {format(weekEnd, 'MMM d')}
+            </span>
+            <span className="text-xs text-text-muted tabular-nums md:hidden">
+              {format(days[mobileDayIdx], 'EEE, MMM d')}
             </span>
             <button
               type="button"
@@ -233,8 +248,31 @@ export default function SchedulePage() {
       <div className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
         <div className="flex flex-col flex-1 border border-surface-border rounded-xl overflow-hidden bg-surface-card">
 
-          {/* Day headers */}
-          <div className="flex flex-shrink-0 border-b border-surface-border">
+          {/* Mobile day-picker strip */}
+          <div className="md:hidden flex flex-shrink-0 border-b border-surface-border overflow-x-auto">
+            {days.map((day, i) => {
+              const today = isToday(day);
+              const selected = i === mobileDayIdx;
+              return (
+                <button
+                  key={day.toISOString()}
+                  type="button"
+                  onClick={() => setMobileDayIdx(i)}
+                  className={`flex-1 flex flex-col items-center py-2 border-r border-surface-border last:border-r-0 transition-colors min-w-[42px] ${selected ? 'bg-brand/10' : ''}`}
+                >
+                  <span className={`text-[9px] font-medium uppercase tracking-widest ${selected ? 'text-brand' : today ? 'text-brand/60' : 'text-text-muted'}`}>
+                    {format(day, 'EEE')}
+                  </span>
+                  <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${selected ? 'bg-brand text-white' : today ? 'text-brand' : 'text-text-secondary'}`}>
+                    {format(day, 'd')}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Day headers (desktop only) */}
+          <div className="hidden md:flex flex-shrink-0 border-b border-surface-border">
             <div className="w-12 flex-shrink-0 border-r border-surface-border" />
             {days.map(day => {
               const today = isToday(day);
@@ -270,14 +308,15 @@ export default function SchedulePage() {
             </div>
 
             {/* Day columns */}
-            {days.map(day => {
+            {days.map((day, i) => {
               const today = isToday(day);
               const placed = layoutDay(sessionsForDay(day));
+              const mobileHidden = i !== mobileDayIdx;
 
               return (
                 <div
                   key={day.toISOString()}
-                  className={`flex-1 relative border-r border-surface-border last:border-r-0 cursor-crosshair schedule-col-height ${today ? 'bg-brand/[0.015]' : ''}`}
+                  className={`flex-1 relative border-r border-surface-border last:border-r-0 cursor-crosshair schedule-col-height ${today ? 'bg-brand/[0.015]' : ''} ${mobileHidden ? 'hidden md:block md:flex-1' : ''}`}
                   onClick={e => handleColumnClick(e, day)}
                 >
                   {/* Hour lines */}

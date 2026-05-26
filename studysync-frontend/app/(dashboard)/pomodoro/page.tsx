@@ -52,7 +52,7 @@ export default function PomodoroPage() {
         </motion.div>
 
         {/* Phase selector */}
-        <motion.div variants={staggerItem} className="flex justify-center gap-2 mb-8">
+        <motion.div variants={staggerItem} className="flex flex-wrap justify-center gap-2 mb-8">
           {(['work', 'short_break', 'long_break'] as const).map(p => (
             <button type="button" key={p}
               onClick={() => { if (!isRunning) setPhase(p); }}
