@@ -15,7 +15,6 @@ build/
 
 # Django
 *.sqlite3
-staticfiles/
 media/
 
 # macOS
