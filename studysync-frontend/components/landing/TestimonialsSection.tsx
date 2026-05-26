@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import { Avatar } from '../ui/avatar';
 
 const testimonials = [
-  { name: 'Alex Chen', role: 'CS Junior, UofT', text: 'StudySync completely changed how I prepare for exams. The AI quiz generator is insane — it generates harder questions than my professor!', rating: 5 },
+  { name: 'Alex Chen', role: 'CS Junior, UofT', text: 'StudySynch completely changed how I prepare for exams. The AI quiz generator is insane — it generates harder questions than my professor!', rating: 5 },
   { name: 'Maya Patel', role: 'Data Science, UBC', text: 'Found my study group in 5 minutes. We meet 3x a week now and my grades went from B- to A. Not even kidding.', rating: 5 },
   { name: 'Jordan Kim', role: 'SE Senior, Waterloo', text: 'The Pomodoro timer + streak tracking keeps me accountable. I have hit 47 days straight and I am not stopping.', rating: 5 },
   { name: 'Priya Sharma', role: 'Mathematics, McGill', text: 'I uploaded my lecture notes and the summarizer extracted exactly what mattered. Hours of review compressed into minutes.', rating: 5 },
-  { name: 'Luca Romano', role: 'CS Freshman, McMaster', text: 'As a first-year, I was lost. Found my people through StudySync in the first week. The onboarding is super smooth too.', rating: 5 },
+  { name: 'Luca Romano', role: 'CS Freshman, McMaster', text: 'As a first-year, I was lost. Found my people through StudySynch in the first week. The onboarding is super smooth too.', rating: 5 },
   { name: 'Sarah Johnson', role: "Cog Sci, Queen's", text: 'The chat is actually beautiful — feels like Discord but smarter. The AI integrations inside group chats are next level.', rating: 5 },
 ];
 

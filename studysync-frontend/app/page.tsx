@@ -25,14 +25,14 @@ export default function LandingPage() {
             <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
               <Zap className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-text-primary">StudySync</span>
+            <span className="font-bold text-text-primary">StudySynch</span>
           </div>
           <div className="flex gap-8 text-sm text-text-muted">
             <Link href="/login" className="hover:text-text-secondary transition-colors">Log in</Link>
             <Link href="/signup" className="hover:text-text-secondary transition-colors">Sign up</Link>
             <a href="#features" className="hover:text-text-secondary transition-colors">Features</a>
           </div>
-          <p className="text-xs text-text-muted">© 2024 StudySync. Built for students.</p>
+          <p className="text-xs text-text-muted">© 2024 StudySynch. Built for students.</p>
         </div>
       </footer>
     </div>

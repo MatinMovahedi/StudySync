@@ -121,7 +121,7 @@ export default function LoginPage() {
           >
             <motion.div variants={staggerItem} className="mb-8">
               <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-2">Welcome back</h1>
-              <p className="text-text-muted text-sm">Sign in to your StudySync account</p>
+              <p className="text-text-muted text-sm">Sign in to your StudySynch account</p>
             </motion.div>
 
             <motion.form
@@ -170,7 +170,7 @@ export default function LoginPage() {
                 <p className="text-xs text-text-muted leading-5">
                   <code className="font-mono text-text-secondary">alex@university.edu</code>
                   <span className="mx-2 text-surface-border">·</span>
-                  <code className="font-mono text-text-secondary">StudySync2024!</code>
+                  <code className="font-mono text-text-secondary">StudySynch2024!</code>
                 </p>
               </div>
             </motion.div>

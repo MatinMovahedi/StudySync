@@ -270,7 +270,7 @@ export default function PricingPage() {
             Ready to study smarter?
           </h2>
           <p className="text-text-muted mb-8">
-            Join thousands of students already using StudySync. Free forever, no card required.
+            Join thousands of students already using StudySynch. Free forever, no card required.
           </p>
           <Link href="/signup">
             <Button size="lg" className="px-10">Get started free</Button>
@@ -285,7 +285,7 @@ export default function PricingPage() {
             <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
               <Zap className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-text-primary">StudySync</span>
+            <span className="font-bold text-text-primary">StudySynch</span>
           </div>
           <div className="flex gap-8 text-sm text-text-muted">
             <Link href="/login" className="hover:text-text-secondary transition-colors">Log in</Link>
@@ -293,7 +293,7 @@ export default function PricingPage() {
             <Link href="/pricing" className="hover:text-text-secondary transition-colors">Pricing</Link>
             <a href="/#features" className="hover:text-text-secondary transition-colors">Features</a>
           </div>
-          <p className="text-xs text-text-muted">© 2024 StudySync. Built for students.</p>
+          <p className="text-xs text-text-muted">© 2024 StudySynch. Built for students.</p>
         </div>
       </footer>
     </div>

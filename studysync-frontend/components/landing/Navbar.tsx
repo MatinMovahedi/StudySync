@@ -36,7 +36,7 @@ export function Navbar() {
           <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
             <Zap className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-sm font-semibold text-text-primary">StudySync</span>
+          <span className="text-sm font-semibold text-text-primary">StudySynch</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-7">

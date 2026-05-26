@@ -113,7 +113,7 @@ class TwoFASetupView(APIView):
         secret = pyotp.random_base32()
         uri = pyotp.totp.TOTP(secret).provisioning_uri(
             name=request.user.email,
-            issuer_name='StudySync',
+            issuer_name='StudySynch',
         )
         img = qrcode.make(uri)
         buffer = io.BytesIO()

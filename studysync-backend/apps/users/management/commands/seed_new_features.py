@@ -250,7 +250,7 @@ RESOURCES = [
         'email': 'sarah@university.edu',
     },
     {
-        'title': 'Pomodoro Timer — StudySync Recommended',
+        'title': 'Pomodoro Timer — StudySynch Recommended',
         'description': 'Clean, distraction-free Pomodoro timer with customizable intervals and session tracking. Works offline and integrates with most calendar apps.',
         'url': 'https://pomofocus.io',
         'content': '',

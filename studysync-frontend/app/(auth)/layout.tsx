@@ -36,7 +36,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="w-9 h-9 rounded-lg bg-brand flex items-center justify-center shadow-lg shadow-brand/40">
               <Zap className="w-[18px] h-[18px] text-white" />
             </div>
-            <span className="text-base font-bold text-white tracking-tight">StudySync</span>
+            <span className="text-base font-bold text-white tracking-tight">StudySynch</span>
           </Link>
 
           {/* Headline + features */}
@@ -102,7 +102,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="w-8 h-8 rounded-md bg-brand flex items-center justify-center shadow-md shadow-brand/30">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-text-primary">StudySync</span>
+            <span className="font-bold text-text-primary">StudySynch</span>
           </Link>
         </div>
 

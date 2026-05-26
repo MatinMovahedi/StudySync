@@ -22,7 +22,7 @@ export function CTASection() {
           Ready to ace your next exam?
         </h2>
         <p className="text-lg text-text-secondary mb-9 max-w-lg mx-auto">
-          Join 10,000+ students already using StudySync. Set up your profile and find your first study group in under 2 minutes.
+          Join 10,000+ students already using StudySynch. Set up your profile and find your first study group in under 2 minutes.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/signup">

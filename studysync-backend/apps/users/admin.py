@@ -16,7 +16,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('email', 'username', 'first_name', 'last_name')
     ordering = ('-created_at',)
     fieldsets = BaseUserAdmin.fieldsets + (
-        ('StudySync', {'fields': ('is_onboarded',)}),
+        ('StudySynch', {'fields': ('is_onboarded',)}),
     )
 
 

@@ -1,6 +1,6 @@
-# StudySync — Frontend
+# StudySynch — Frontend
 
-Next.js 16 frontend for StudySync. See the [root README](../README.md) for full project documentation, architecture diagrams, and setup instructions.
+Next.js 16 frontend for StudySynch. See the [root README](../README.md) for full project documentation, architecture diagrams, and setup instructions.
 
 ## Quick start
 

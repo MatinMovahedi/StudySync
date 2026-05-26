@@ -22,7 +22,7 @@ async def chat_completion_stream(messages: list, context: str = ''):
     else:
         from openai import AsyncOpenAI
         client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        system_prompt = f"You are StudySync AI, a helpful study assistant for university students. {context}"
+        system_prompt = f"You are StudySynch AI, a helpful study assistant for university students. {context}"
         full_messages = [{"role": "system", "content": system_prompt}] + messages
         async with client.chat.completions.stream(model="gpt-4o", messages=full_messages) as stream:
             async for text in stream.text_stream:

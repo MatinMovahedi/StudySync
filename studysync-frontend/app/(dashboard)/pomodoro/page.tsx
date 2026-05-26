@@ -32,7 +32,7 @@ export default function PomodoroPage() {
   const { phase, secondsLeft, isRunning, sessionCount, workDuration, subject, start, pause, resume, reset, progress, setSubject, setPhase } = usePomodoro();
   const [subjectInput, setSubjectInput] = useState(subject);
 
-  useEffect(() => { document.title = `${Math.floor(secondsLeft/60)}:${String(secondsLeft%60).padStart(2,'0')} — ${PHASE_LABELS[phase as keyof typeof PHASE_LABELS]} · StudySync`; }, [secondsLeft, phase]);
+  useEffect(() => { document.title = `${Math.floor(secondsLeft/60)}:${String(secondsLeft%60).padStart(2,'0')} — ${PHASE_LABELS[phase as keyof typeof PHASE_LABELS]} · StudySynch`; }, [secondsLeft, phase]);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;

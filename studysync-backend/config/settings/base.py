@@ -154,4 +154,4 @@ USE_MOCK_AI = config('USE_MOCK_AI', default=True, cast=bool)
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'StudySync <noreply@studysync.app>'
+DEFAULT_FROM_EMAIL = 'StudySynch <noreply@studysynch.org>'

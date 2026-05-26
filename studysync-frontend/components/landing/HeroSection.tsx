@@ -166,7 +166,7 @@ export function HeroSection() {
                 <div className="w-3 h-3 rounded-full bg-surface-border" />
               </div>
               <div className="flex-1 bg-surface rounded border border-surface-border px-3 py-1 text-[11px] text-text-muted text-center max-w-xs mx-auto">
-                app.studysync.io/groups/cs401/chat
+                app.studysynch.org/groups/cs401/chat
               </div>
             </div>
 

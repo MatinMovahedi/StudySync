@@ -21,6 +21,6 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, isAuthenticated: false });
       },
     }),
-    { name: 'studysync-auth', partialize: (s) => ({ user: s.user, isAuthenticated: s.isAuthenticated }) }
+    { name: 'studysynch-auth', partialize: (s) => ({ user: s.user, isAuthenticated: s.isAuthenticated }) }
   )
 );

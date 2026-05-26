@@ -14,6 +14,6 @@ export const useUIStore = create<UIState>()(
       setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
     }),
-    { name: 'studysync-ui' }
+    { name: 'studysynch-ui' }
   )
 );

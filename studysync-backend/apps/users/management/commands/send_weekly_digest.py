@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 f'  • {n.message}' for n in notifications
             ) or '  No recent activity.'
 
-            subject = f'Your StudySync Weekly Report — {total_minutes // 60}h {total_minutes % 60}m studied'
+            subject = f'Your StudySynch Weekly Report — {total_minutes // 60}h {total_minutes % 60}m studied'
             body = (
                 f'Hi {user.first_name or user.username},\n\n'
                 f'Here is your weekly study summary:\n\n'
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 f'  Current streak: {current_streak} days\n\n'
                 f'Recent activity:\n{activity_lines}\n\n'
                 f'Keep up the great work!\n\n'
-                f'— The StudySync Team'
+                f'— The StudySynch Team'
             )
 
             send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])

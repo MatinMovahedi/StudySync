@@ -8,10 +8,10 @@ function getTheme(): 'dark' | 'light' {
 
 function persistTheme(theme: 'dark' | 'light') {
   try {
-    const raw = localStorage.getItem('studysync-theme');
+    const raw = localStorage.getItem('studysynch-theme');
     const stored = raw ? JSON.parse(raw) : {};
     stored.state = { ...(stored.state ?? {}), theme };
-    localStorage.setItem('studysync-theme', JSON.stringify(stored));
+    localStorage.setItem('studysynch-theme', JSON.stringify(stored));
   } catch {}
 }
 

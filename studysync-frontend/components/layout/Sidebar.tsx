@@ -67,7 +67,7 @@ export function Sidebar() {
                 transition={{ duration: 0.15 }}
                 className="text-sm font-semibold text-text-primary whitespace-nowrap overflow-hidden"
               >
-                StudySync
+                StudySynch
               </motion.span>
             )}
           </AnimatePresence>

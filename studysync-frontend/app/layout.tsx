@@ -17,11 +17,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} h-full`} data-scroll-behavior="smooth" data-theme="dark" suppressHydrationWarning>
       <head>
-        <title>StudySync — AI-Powered Study Groups</title>
+        <title>StudySynch — AI-Powered Study Groups</title>
         <meta name="description" content="Connect with classmates, collaborate in real-time, and ace your courses with AI-powered study tools." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Reads persisted theme before first paint to prevent flash */}
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `try{var s=JSON.parse(localStorage.getItem('studysync-theme')||'{}');document.documentElement.dataset.theme=s.state&&s.state.theme?s.state.theme:'dark';}catch(e){document.documentElement.dataset.theme='dark';}` }} />
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `try{var s=JSON.parse(localStorage.getItem('studysynch-theme')||'{}');document.documentElement.dataset.theme=s.state&&s.state.theme?s.state.theme:'dark';}catch(e){document.documentElement.dataset.theme='dark';}` }} />
       </head>
       <body className="h-full bg-surface antialiased">
         <QueryClientProvider client={queryClient}>

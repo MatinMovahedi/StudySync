@@ -23,6 +23,6 @@ export const useThemeStore = create<ThemeStore>()(
         set({ theme: t });
       },
     }),
-    { name: 'studysync-theme' }
+    { name: 'studysynch-theme' }
   )
 );

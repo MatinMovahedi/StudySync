@@ -63,7 +63,7 @@ DEMO_SPOTS = [
 
 
 class Command(BaseCommand):
-    help = 'Seed database with demo data for StudySync'
+    help = 'Seed database with demo data for StudySynch'
 
     def handle(self, *args, **kwargs):
         self.stdout.write('Seeding demo data...')
@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 'is_onboarded': True,
             })
             if created:
-                user.set_password('StudySync2024!')
+                user.set_password('StudySynch2024!')
                 user.save()
             profile, _ = UserProfile.objects.get_or_create(user=user)
             profile.program = u['program']
@@ -157,4 +157,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\nDemo data seeded successfully!'))
         self.stdout.write(f'Users: {len(created_users)} | Groups: {len(created_groups)} | Spots: {len(DEMO_SPOTS)}')
-        self.stdout.write('Login with any user: password = StudySync2024!')
+        self.stdout.write('Login with any user: password = StudySynch2024!')

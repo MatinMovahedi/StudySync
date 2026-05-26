@@ -175,7 +175,7 @@ export default function AIPage() {
               <div className="bg-surface-card border border-surface-border rounded-md overflow-hidden flex flex-col" style={{ height: 560 }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-border">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-sm font-medium text-text-primary">StudySync AI</span>
+                  <span className="text-sm font-medium text-text-primary">StudySynch AI</span>
                   <Badge variant="emerald" className="text-[10px]">Online</Badge>
                 </div>
 
