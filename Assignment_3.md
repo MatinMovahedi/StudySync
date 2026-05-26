@@ -276,6 +276,80 @@ The following use cases are identified for StudySync. The primary actor in all c
 
 ---
 
+### UC-08: Run Pomodoro Timer
+
+| Field | Detail |
+|-------|--------|
+| **Use Case Name** | Run Pomodoro Timer |
+| **Use Case ID** | UC-08 |
+| **Actor(s)** | Student (primary) |
+| **Description** | A student uses the built-in Pomodoro timer to structure their study session into focused work intervals followed by short breaks. Completed intervals are logged and contribute to study analytics and streak tracking. |
+| **Preconditions** | The student is logged in and has navigated to the Pomodoro page. |
+| **Postconditions** | Completed work intervals are recorded in `DailyStudyLog`. The student's study streak is updated if the session occurred on a new calendar day. XP is awarded to the student's gamification profile. |
+
+**Main Flow:**
+1. The student navigates to `/pomodoro`.
+2. The system displays the timer with default settings: 25-minute work interval and 5-minute break.
+3. The student optionally adjusts the work and break durations using the controls.
+4. The student clicks **Start**.
+5. The timer counts down, displaying the remaining time in large text.
+6. When the work interval reaches zero, the system plays an audio notification and logs the completed interval.
+7. The system awards XP and updates `DailyStudyLog` with the elapsed study minutes.
+8. The timer automatically switches to the break phase and counts down.
+9. When the break ends, the system plays a notification and prompts the student to begin the next interval.
+10. The student clicks **Start** again to begin the next Pomodoro cycle.
+
+**Alternative Flow A — Pause Timer:**
+- At any point during step 5 or 8, the student may click **Pause**.
+- The timer halts and a **Resume** button appears.
+- The student clicks **Resume** to continue from the paused time.
+
+**Alternative Flow B — Stop Early:**
+- The student clicks **Stop** mid-interval.
+- The system logs only the completed portion of the work interval to `DailyStudyLog`.
+- A session summary is displayed showing intervals completed and total minutes studied.
+
+**Alternative Flow C — Page Closed Mid-Session:**
+- If the browser tab is closed during an active timer, no partial time is logged (the timer state is not persisted server-side).
+
+---
+
+### UC-10: Generate AI Weekly Study Plan
+
+| Field | Detail |
+|-------|--------|
+| **Use Case Name** | Generate AI Weekly Study Plan |
+| **Use Case ID** | UC-10 |
+| **Actor(s)** | Student (primary), AI Service (secondary) |
+| **Description** | A student provides a weekly study goal and available hours per day. The system uses AI to generate a personalised 7-day study plan broken into subject-specific time blocks, which is then displayed on a colour-coded weekly grid. |
+| **Preconditions** | The student is logged in. The student has at least one entry in their profile courses. |
+| **Postconditions** | A `StudyPlan` record is created and stored for the student. The 7-day grid is rendered on screen. The plan appears in the student's past plans list. |
+
+**Main Flow:**
+1. The student navigates to `/planner`.
+2. The student types a study goal (e.g., "Prepare for MATH201 midterm and finish CS401 assignments").
+3. The student sets the available hours per day using a slider (1–8 hours).
+4. The student clicks **Generate Plan**.
+5. The system reads the student's enrolled courses from their profile and their study activity from the last 7 days.
+6. The system constructs a prompt and sends it to the AI service requesting a JSON array of `{day, subject, duration_min, task, priority}` objects.
+7. The AI service returns the plan data.
+8. The system saves the plan as a `StudyPlan` record linked to the student.
+9. The system renders a 7-column weekly grid, with each study block colour-coded by subject.
+10. The new plan is prepended to the past plans list at the bottom of the page.
+
+**Alternative Flow A — AI Service Unavailable:**
+- At step 6, if the AI service returns an error or `USE_MOCK_AI=True` is configured, the system returns a pre-defined sample plan covering common study tasks.
+- A subtle notice informs the student that a mock plan was used.
+
+**Alternative Flow B — No Courses in Profile:**
+- At step 5, if the student has no courses listed, the system generates a generic plan based on the goal text alone, without subject-specific context.
+
+**Alternative Flow C — View Past Plan:**
+- The student clicks on a past plan in the list at the bottom of the page.
+- The plan expands to show its 7-day grid without making a new API call.
+
+---
+
 ### UC-09: Ask the AI Study Assistant
 
 | Field | Detail |

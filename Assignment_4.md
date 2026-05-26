@@ -927,9 +927,140 @@ SESSION BLOCK (hovered):           DETAIL MODAL:
 
 ---
 
-### 3.4 Component and API Design
+### 3.4 Deployment Diagram
 
-#### 3.4.1 REST API Endpoint Summary
+The deployment diagram below shows the physical distribution of software components across execution environments for the production system.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  USER DEVICE  (browser / mobile browser)                                    │
+│  ┌──────────────────────────────────────┐                                   │
+│  │  Next.js React App (client bundle)   │                                   │
+│  │  - Zustand state stores              │                                   │
+│  │  - React Query cache                 │                                   │
+│  │  - localStorage (JWT tokens)         │                                   │
+│  └──────────┬───────────────────────────┘                                   │
+└─────────────┼───────────────────────────────────────────────────────────────┘
+              │ HTTPS / WSS
+   ┌──────────▼────────────────────────────────────────────────────────────┐
+   │  VERCEL EDGE NETWORK  (CDN + Serverless Runtime)                      │
+   │                                                                        │
+   │  ┌─────────────────────────────────┐  ┌───────────────────────────┐  │
+   │  │  Frontend Project               │  │  Backend Project           │  │
+   │  │  studysync-frontend-delta       │  │  studysync-backend-rho     │  │
+   │  │  .vercel.app                    │  │  .vercel.app               │  │
+   │  │                                 │  │                            │  │
+   │  │  Runtime: Node.js 20 (Next.js)  │  │  Runtime: Python 3.12      │  │
+   │  │  Build: Turbopack               │  │  Entry: api/index.py       │  │
+   │  │  Static: CDN-cached per route   │  │  WSGI via daphne           │  │
+   │  │                                 │  │                            │  │
+   │  │  Env vars:                      │  │  Env vars:                 │  │
+   │  │  NEXT_PUBLIC_API_URL            │  │  SECRET_KEY                │  │
+   │  │  NEXT_PUBLIC_WS_URL             │  │  POSTGRES_URL              │  │
+   │  └─────────────────────────────────┘  │  CORS_ALLOWED_ORIGINS      │  │
+   │                                        │  DJANGO_SETTINGS_MODULE    │  │
+   │                                        │  USE_MOCK_AI               │  │
+   │                                        └──────────┬─────────────────┘  │
+   └──────────────────────────────────────────────────┼────────────────────┘
+                                                       │ SSL/TCP (pg wire)
+   ┌───────────────────────────────────────────────────▼────────────────────┐
+   │  NEON SERVERLESS POSTGRES  (Vercel Storage Integration)                │
+   │                                                                         │
+   │  Host: ep-*.us-east-2.aws.neon.tech                                    │
+   │  Pooler: PgBouncer (connection pooling for serverless)                 │
+   │  Plan: Free tier (0.5 GB storage, auto-suspend on idle)                │
+   │  Backups: Neon managed, point-in-time recovery                         │
+   │  Schema: 19 Django-managed tables across 13 application domains        │
+   └─────────────────────────────────────────────────────────────────────────┘
+                                                       │ HTTPS
+   ┌───────────────────────────────────────────────────▼────────────────────┐
+   │  OPENAI API  (External Service)                                         │
+   │  Endpoint: api.openai.com/v1/chat/completions                          │
+   │  Used by: AI assistant chat, weekly study plan generation              │
+   │  Fallback: Mock responses when USE_MOCK_AI=True                        │
+   └─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Deployment notes:**
+- The frontend is statically pre-rendered at build time for most routes (29 of 29 routes compiled). Dynamic routes (`/groups/[groupId]`, `/profile/[userId]`) are server-rendered on demand.
+- The backend runs as a serverless Python WSGI function. On cold start (first request after idle), Django migrations are executed automatically via `call_command('migrate')` in `api/index.py`.
+- WebSocket connections (`wss://`) are established directly between the browser and the backend. On Vercel's serverless runtime, persistent WebSocket connections are not supported; the application falls back to 3-second REST polling automatically after 3 failed connection attempts.
+- The Neon database auto-suspends after 5 minutes of inactivity on the free tier, causing a ~1-second cold-start delay on the next query.
+
+---
+
+### 3.5 Django Application Component Diagram
+
+StudySync's backend is decomposed into 13 Django application modules, each owning its domain's models, serializers, views, and URL patterns.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  config/  — Project configuration                                           │
+│  ┌──────────┐  ┌──────────────┐  ┌────────────────────────────────────┐   │
+│  │ settings/ │  │   urls.py    │  │  asgi.py                           │   │
+│  │ base.py   │  │ (root router)│  │  ProtocolTypeRouter                │   │
+│  │ dev.py    │  │              │  │  ├── HTTP → WSGI (api/index.py)    │   │
+│  │ prod.py   │  │              │  │  └── WS → AllowedHostsOriginVal... │   │
+│  └──────────┘  └──────────────┘  └────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  apps/  — Domain application modules                                         │
+│                                                                               │
+│  ┌────────────────┐   ┌─────────────────┐   ┌──────────────────────────┐   │
+│  │  users         │   │  groups         │   │  chat                    │   │
+│  │  ─────────     │   │  ────────       │   │  ────                    │   │
+│  │  User (custom) │◄──│  StudyGroup     │◄──│  Message                 │   │
+│  │  UserProfile   │   │  GroupMembership│   │  FocusRoom               │   │
+│  │  2FA views     │   │  REST CRUD      │   │  ChatConsumer (WS)       │   │
+│  │  Auth views    │   │  join/leave     │   │  MessageListCreateView   │   │
+│  │  weekly digest │   │                 │   │  3s poll fallback        │   │
+│  └────────┬───────┘   └────────┬────────┘   └──────────────────────────┘   │
+│           │                    │                                              │
+│  ┌────────▼───────┐   ┌────────▼────────┐   ┌──────────────────────────┐   │
+│  │  notifications │   │  sessions_app   │   │  analytics               │   │
+│  │  ─────────     │   │  ────────────── │   │  ─────────               │   │
+│  │  Notification  │   │  StudySession   │   │  DailyStudyLog           │   │
+│  │  NotifConsumer │   │  date-range     │   │  StudyStreak             │   │
+│  │  (WS push)     │   │  filter API     │   │  CourseGrade             │   │
+│  └────────────────┘   └─────────────────┘   │  weighted avg calc       │   │
+│                                               └──────────────────────────┘   │
+│  ┌────────────────┐   ┌─────────────────┐   ┌──────────────────────────┐   │
+│  │  ai_assistant  │   │  communities    │   │  gamification            │   │
+│  │  ────────────  │   │  ───────────    │   │  ─────────────           │   │
+│  │  AIConversation│   │  Community      │   │  GamificationProfile     │   │
+│  │  StudyPlan     │   │  Post           │   │  XP / level / badges     │   │
+│  │  OpenAI client │   │  WikiPage       │   │  leaderboard API         │   │
+│  │  mock fallback │   │  post/wiki views│   └──────────────────────────┘   │
+│  └────────────────┘   └─────────────────┘                                   │
+│                                                                               │
+│  ┌────────────────┐   ┌─────────────────┐   ┌──────────────────────────┐   │
+│  │  resources     │   │  tutoring       │   │  campus                  │   │
+│  │  ─────────     │   │  ────────       │   │  ──────                  │   │
+│  │  Resource      │   │  TutorListing   │   │  CampusSpot              │   │
+│  │  ResourceVote  │   │  TutoringRequest│   │  map/search API          │   │
+│  │  search/filter │   │  accept/decline │   └──────────────────────────┘   │
+│  └────────────────┘   └─────────────────┘                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Inter-module dependencies (import direction):
+  chat      → groups (StudyGroup FK)
+  chat      → users  (sender FK)
+  sessions  → groups (StudyGroup FK)
+  analytics → users  (user FK)
+  resources → communities (community FK, optional)
+  resources → users  (created_by FK)
+  tutoring  → users  (tutor, requester FKs)
+  communities → users (author FKs)
+  notifications → users (user FK)
+  gamification → users (user FK, OneToOne)
+```
+
+---
+
+### 3.6 Component and API Design
+
+#### 3.6.1 REST API Endpoint Summary
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -973,7 +1104,7 @@ SESSION BLOCK (hovered):           DETAIL MODAL:
 
 ---
 
-#### 3.4.2 Key Algorithms
+#### 3.6.2 Key Algorithms
 
 **Session Overlap Detection (Schedule Calendar)**
 

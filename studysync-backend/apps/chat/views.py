@@ -1,16 +1,27 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 from .models import Message
 from .serializers import MessageSerializer
+from apps.groups.models import StudyGroup
 
 
-class MessageHistoryView(generics.ListAPIView):
+class MessageListCreateView(generics.ListCreateAPIView):
+    """GET: message history. POST: REST fallback for sending when WebSocket unavailable."""
     serializer_class = MessageSerializer
 
     def get_queryset(self):
-        group_id = self.kwargs['group_id']
-        return Message.objects.filter(group_id=group_id).select_related('sender', 'sender__profile').order_by('created_at')
+        return Message.objects.filter(
+            group_id=self.kwargs['group_id']
+        ).select_related('sender', 'sender__profile').order_by('created_at')
+
+    def perform_create(self, serializer):
+        group = get_object_or_404(StudyGroup, pk=self.kwargs['group_id'])
+        if not group.members.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("You are not a member of this group.")
+        serializer.save(sender=self.request.user, group=group)
 
 
 class MessageReactView(APIView):

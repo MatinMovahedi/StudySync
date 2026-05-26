@@ -13,6 +13,7 @@ export function useChat(groupId: number) {
   const { addMessage, setMessages, setTyping, setOnline, messages, typingUsers } = useChatStore();
   const { user } = useAuthStore();
 
+  // Initial message load
   const { data } = useQuery({
     queryKey: ['messages', groupId],
     queryFn: () => api.get(`/api/chat/${groupId}/messages/?ordering=-created_at&limit=50`).then(r =>
@@ -25,7 +26,7 @@ export function useChat(groupId: number) {
     if (data) setMessages(groupId, data);
   }, [data, groupId, setMessages]);
 
-  const { send } = useWebSocket(`${WS_BASE}/ws/chat/${groupId}/`, {
+  const { send, isFallback } = useWebSocket(`${WS_BASE}/ws/chat/${groupId}/`, {
     onMessage: (msg) => {
       if (msg.type === 'message') addMessage(groupId, msg.data as unknown as Message);
       else if (msg.type === 'typing') {
@@ -37,20 +38,40 @@ export function useChat(groupId: number) {
       }
     },
     enabled: !!groupId,
+    maxRetries: 3,
   });
 
-  const sendMessage = useCallback((content: string) => {
-    send({ type: 'message', content, message_type: 'text' });
-  }, [send]);
+  // Polling fallback: poll every 3 s when WebSocket is unavailable (e.g. Vercel serverless)
+  useQuery({
+    queryKey: ['messages-poll', groupId],
+    queryFn: async () => {
+      const r = await api.get(`/api/chat/${groupId}/messages/?ordering=-created_at&limit=50`);
+      const msgs = (r.data.results || r.data).reverse();
+      setMessages(groupId, msgs);
+      return msgs;
+    },
+    enabled: !!groupId && isFallback,
+    refetchInterval: 3000,
+  });
+
+  const sendMessage = useCallback(async (content: string) => {
+    if (isFallback) {
+      const r = await api.post(`/api/chat/${groupId}/messages/`, { content, message_type: 'text' });
+      addMessage(groupId, r.data);
+    } else {
+      send({ type: 'message', content, message_type: 'text' });
+    }
+  }, [send, isFallback, groupId, addMessage]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
-    send({ type: 'typing', is_typing: isTyping });
-  }, [send]);
+    if (!isFallback) send({ type: 'typing', is_typing: isTyping });
+  }, [send, isFallback]);
 
   return {
     messages: messages[groupId] || [],
     typingUsers: typingUsers[groupId] || [],
     sendMessage,
     sendTyping,
+    isFallback,
   };
 }
