@@ -12,5 +12,7 @@ from apps.notifications.routing import websocket_urlpatterns as notif_ws
 
 application = ProtocolTypeRouter({
     'http': django_asgi_app,
-    'websocket': URLRouter(chat_ws + notif_ws),
+    'websocket': AllowedHostsOriginValidator(
+        URLRouter(chat_ws + notif_ws)
+    ),
 })

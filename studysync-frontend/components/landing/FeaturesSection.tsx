@@ -1,130 +1,103 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Users, Brain, MessageSquare, BarChart3, Timer, Zap, LucideIcon } from 'lucide-react';
+import { Users, Brain, MessageSquare, BarChart3, Timer, Zap } from 'lucide-react';
+import { staggerContainer, staggerItem } from '../../lib/utils/animations';
 
-interface Feature {
-  num: string;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  tag: string;
-  stat: string;
-  bar: string;
-  iconBg: string;
-  iconColor: string;
-  statBg: string;
-  statColor: string;
-}
-
-const features: Feature[] = [
+const features = [
   {
-    num: '01', icon: Users,
-    title: 'Study groups that\nactually match.',
-    description: 'AI pairs you with classmates who share your courses, schedule, and study style — not just whoever clicked "join" first.',
-    tag: 'Smart Matching', stat: '3× better outcomes vs random groups',
-    bar: 'bg-brand', iconBg: 'bg-brand/15', iconColor: 'text-brand-light',
-    statBg: 'bg-brand/10', statColor: 'text-brand-light',
+    icon: Brain,
+    title: 'AI that teaches, not just answers',
+    description: 'Generate quizzes from your notes, get concept breakdowns, flip through AI-made flashcards, and summarize any reading in seconds.',
+    colorClass: 'text-brand',
+    bgClass: 'bg-brand/10',
+    badge: 'Quiz · Flashcards · Explain',
   },
   {
-    num: '02', icon: Brain,
-    title: 'AI that teaches,\nnot just answers.',
-    description: 'Generate quizzes from your notes, get concept breakdowns at your level, flip through AI-made flashcards, and summarize any reading in seconds.',
-    tag: 'AI Tools', stat: 'Quiz · Summarize · Flashcards · Explain',
-    bar: 'bg-accent-purple', iconBg: 'bg-accent-purple/15', iconColor: 'text-accent-purple',
-    statBg: 'bg-accent-purple/10', statColor: 'text-accent-purple',
+    icon: Users,
+    title: 'Study groups that actually match',
+    description: 'Join or create groups by course, study style, and schedule. Shared goals lead to better outcomes — every time.',
+    colorClass: 'text-purple-400',
+    bgClass: 'bg-purple-400/10',
+    badge: '3× better outcomes',
   },
   {
-    num: '03', icon: MessageSquare,
-    title: 'Real-time chat\nbuilt for focus.',
-    description: 'Channels per group, emoji reactions, typing indicators — and none of the noise. Everything stays on topic because your time matters.',
-    tag: 'Live Collaboration', stat: 'WebSocket-powered, <50ms latency',
-    bar: 'bg-accent-cyan', iconBg: 'bg-accent-cyan/15', iconColor: 'text-accent-cyan',
-    statBg: 'bg-accent-cyan/10', statColor: 'text-accent-cyan',
+    icon: MessageSquare,
+    title: 'Real-time chat built for focus',
+    description: 'Channels per group, typing indicators, and zero noise. Everything stays on topic because your time matters.',
+    colorClass: 'text-cyan-400',
+    bgClass: 'bg-cyan-400/10',
+    badge: 'WebSocket · <50ms',
   },
   {
-    num: '04', icon: BarChart3,
-    title: 'See exactly where\nyour time goes.',
-    description: 'Daily study hours, streak calendars, subject breakdowns. Know which habits move the needle and which ones just feel productive.',
-    tag: 'Analytics', stat: 'Streak · Hours · Subject breakdown',
-    bar: 'bg-accent-emerald', iconBg: 'bg-accent-emerald/15', iconColor: 'text-accent-emerald',
-    statBg: 'bg-accent-emerald/10', statColor: 'text-accent-emerald',
+    icon: BarChart3,
+    title: 'See exactly where your time goes',
+    description: 'Daily study hours, streak calendars, subject breakdowns. Know which habits move the needle.',
+    colorClass: 'text-amber-400',
+    bgClass: 'bg-amber-400/10',
+    badge: 'Streaks · Analytics',
   },
   {
-    num: '05', icon: Timer,
-    title: 'Built-in Pomodoro\nthat logs itself.',
-    description: 'Start a focus session, work through breaks, and watch your stats update automatically. No spreadsheet, no manual tracking.',
-    tag: 'Pomodoro Timer', stat: '25-min work / 5-min break cycles',
-    bar: 'bg-accent-amber', iconBg: 'bg-accent-amber/15', iconColor: 'text-accent-amber',
-    statBg: 'bg-accent-amber/10', statColor: 'text-accent-amber',
+    icon: Timer,
+    title: 'Built-in Pomodoro that logs itself',
+    description: 'Start a focus session, work through breaks, and watch your stats update automatically. No manual tracking.',
+    colorClass: 'text-rose-400',
+    bgClass: 'bg-rose-400/10',
+    badge: '25/5 min cycles',
   },
   {
-    num: '06', icon: Zap,
-    title: 'One platform.\nNo tab switching.',
-    description: 'Groups, chat, AI tools, timers, analytics — all in the same interface. Stop losing your train of thought to another browser tab.',
-    tag: 'All-in-one', stat: "Everything you need, nothing you don't",
-    bar: 'bg-accent-rose', iconBg: 'bg-accent-rose/15', iconColor: 'text-accent-rose',
-    statBg: 'bg-accent-rose/10', statColor: 'text-accent-rose',
+    icon: Zap,
+    title: 'One platform. No tab switching.',
+    description: 'Groups, chat, AI, timers, analytics — all in the same interface. Stay in flow and get more done.',
+    colorClass: 'text-brand',
+    bgClass: 'bg-brand/10',
+    badge: 'All-in-one',
   },
 ];
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="py-28 relative">
-      <div className="absolute inset-0 line-grid" />
-
-      <div className="relative z-10 max-w-6xl mx-auto px-6">
+    <section id="features" className="py-28 bg-surface border-t border-surface-border">
+      <div className="max-w-6xl mx-auto px-6">
         <motion.div
-          className="mb-20"
-          initial={{ opacity: 0, y: 20 }}
+          className="mb-16 text-center"
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
         >
-          <p className="text-xs font-semibold text-brand-light uppercase tracking-[0.2em] mb-4">What you get</p>
-          <h2 className="text-4xl md:text-5xl font-black text-text-primary leading-tight max-w-2xl">
-            Built for how students
-            <span className="gradient-text"> actually study.</span>
+          <p className="text-xs font-mono text-brand uppercase tracking-[0.18em] mb-3">What you get</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-text-primary leading-tight">
+            Built for how students actually study.
           </h2>
+          <p className="text-text-secondary mt-4 max-w-md mx-auto">
+            Every feature earns its place. No bloat, no learning curve.
+          </p>
         </motion.div>
 
-        <div className="space-y-3">
-          {features.map((f, i) => (
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-60px' }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {features.map((f) => (
             <motion.div
-              key={f.num}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
+              key={f.title}
+              variants={staggerItem}
+              className="group bg-surface-card border border-surface-border rounded-lg p-6 hover:border-brand/30 transition-all duration-300 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.15)]"
             >
-              <div className="group glass rounded-2xl border border-white/6 hover:border-white/12 transition-all duration-300 overflow-hidden">
-                <div className="flex items-stretch">
-                  <div className={`w-1 flex-shrink-0 rounded-l-2xl transition-all duration-300 group-hover:w-1.5 ${f.bar}`} />
-
-                  <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5">
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <span className="text-xs font-bold text-text-muted font-mono w-6">{f.num}</span>
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${f.iconBg} ${f.iconColor}`}>
-                        <f.icon className="w-5 h-5" />
-                      </div>
-                    </div>
-
-                    <div className="sm:w-56 flex-shrink-0">
-                      <h3 className="text-sm font-bold text-text-primary leading-snug whitespace-pre-line">{f.title}</h3>
-                    </div>
-
-                    <p className="flex-1 text-sm text-text-secondary leading-relaxed hidden md:block">
-                      {f.description}
-                    </p>
-
-                    <div className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap hidden lg:block ${f.statBg} ${f.statColor}`}>
-                      {f.stat}
-                    </div>
-                  </div>
-                </div>
+              <div className={`w-10 h-10 rounded-md ${f.bgClass} flex items-center justify-center mb-4`}>
+                <f.icon className={`w-5 h-5 ${f.colorClass}`} />
               </div>
+              <h3 className="text-sm font-semibold text-text-primary mb-2 leading-snug">{f.title}</h3>
+              <p className="text-sm text-text-secondary leading-relaxed mb-4">{f.description}</p>
+              <span className="inline-block text-[11px] font-medium text-text-muted bg-surface-elevated px-2 py-0.5 rounded-md">
+                {f.badge}
+              </span>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

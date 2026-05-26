@@ -1,8 +1,10 @@
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta, date
-from .models import StudyStreak, DailyStudyLog
+from .models import StudyStreak, DailyStudyLog, CourseGrade
+from .serializers import CourseGradeSerializer
 from apps.sessions_app.models import PomodoroSession
 
 
@@ -44,11 +46,45 @@ class SubjectBreakdownView(APIView):
             subject = s.subject or 'Other'
             breakdown[subject] = breakdown.get(subject, 0) + s.duration_minutes
         data = [{'subject': k, 'minutes': v} for k, v in breakdown.items()]
-        if not data:
-            data = [
-                {'subject': 'Computer Science', 'minutes': 120},
-                {'subject': 'Mathematics', 'minutes': 90},
-                {'subject': 'Physics', 'minutes': 60},
-                {'subject': 'English', 'minutes': 45},
-            ]
         return Response({'breakdown': data})
+
+
+class HeatmapView(APIView):
+    def get(self, request):
+        today = timezone.now().date()
+        start_date = today - timedelta(days=364)
+        logs = DailyStudyLog.objects.filter(user=request.user, date__gte=start_date)
+        log_map = {log.date: log.minutes_studied for log in logs}
+        data = []
+        for i in range(365):
+            d = start_date + timedelta(days=i)
+            minutes = log_map.get(d, 0)
+            if minutes == 0:
+                intensity = 0
+            elif minutes <= 30:
+                intensity = 1
+            elif minutes <= 60:
+                intensity = 2
+            elif minutes <= 120:
+                intensity = 3
+            else:
+                intensity = 4
+            data.append({'date': d.isoformat(), 'minutes': minutes, 'intensity': intensity})
+        return Response({'data': data})
+
+
+class CourseGradeListCreateView(generics.ListCreateAPIView):
+    serializer_class = CourseGradeSerializer
+
+    def get_queryset(self):
+        return CourseGrade.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class CourseGradeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CourseGradeSerializer
+
+    def get_queryset(self):
+        return CourseGrade.objects.filter(user=self.request.user)

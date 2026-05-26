@@ -27,7 +27,42 @@ export async function completeOnboarding(payload: Record<string, unknown>) {
   return data;
 }
 
+export async function getUserById(id: number): Promise<User> {
+  const { data } = await api.get(`/api/users/${id}/`);
+  return data;
+}
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const { data } = await api.patch('/api/users/change-password/', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+  return data;
+}
+
 export function logout() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+}
+
+export async function setup2FA(): Promise<{ secret: string; qr_code: string }> {
+  const { data } = await api.get('/api/users/2fa/setup/');
+  return data;
+}
+
+export async function enable2FA(secret: string, code: string): Promise<{ enabled: boolean }> {
+  const { data } = await api.post('/api/users/2fa/enable/', { secret, code });
+  return data;
+}
+
+export async function disable2FA(code: string): Promise<{ enabled: boolean }> {
+  const { data } = await api.post('/api/users/2fa/disable/', { code });
+  return data;
+}
+
+export async function verify2FA(tempToken: string, code: string) {
+  const { data } = await api.post('/api/auth/2fa/verify/', { temp_token: tempToken, code });
+  localStorage.setItem('access_token', data.access);
+  localStorage.setItem('refresh_token', data.refresh);
+  return data;
 }

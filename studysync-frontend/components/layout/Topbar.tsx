@@ -1,19 +1,42 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Search, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useNotificationStore } from '../../lib/store/notificationStore';
 import { Avatar } from '../ui/avatar';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { useAuthStore } from '../../lib/store/authStore';
-import { Badge } from '../ui/badge';
 import { formatRelativeTime } from '../../lib/utils/format';
 import { markRead, markAllRead } from '../../lib/api/notifications';
 
 export function Topbar() {
   const { user } = useAuthStore();
   const { notifications, unreadCount, markRead: markReadStore, markAllRead: markAllStore } = useNotificationStore();
+  const notifRef = useRef<HTMLDivElement>(null);
   const [showNotifs, setShowNotifs] = useState(false);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (!showNotifs) return;
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifs(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showNotifs]);
+  const router = useRouter();
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && search.trim()) {
+      router.push(`/groups?search=${encodeURIComponent(search.trim())}`);
+      setSearch('');
+    }
+    if (e.key === 'Escape') setSearch('');
+  };
 
   const handleMarkRead = async (id: number) => {
     markReadStore(id);
@@ -26,24 +49,30 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-16 flex items-center gap-4 px-6 border-b border-white/5 glass flex-shrink-0 z-10">
+    <header className="h-12 flex items-center gap-4 px-5 border-b border-surface-border bg-surface flex-shrink-0 z-10">
       {/* Search */}
-      <div className="flex-1 max-w-md relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+      <div className="flex-1 max-w-sm relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search groups, courses, people..."
-          className="w-full bg-surface-elevated border border-surface-border rounded-xl pl-9 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/40 transition-colors"
+          onKeyDown={handleSearchSubmit}
+          placeholder="Search groups, courses…"
+          className="w-full bg-surface-card border border-surface-border rounded-md pl-8 pr-3 h-8 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-colors"
         />
       </div>
 
-      <div className="flex items-center gap-3 ml-auto">
+      <div className="flex items-center gap-2 ml-auto">
+        {/* Theme toggle */}
+        <ThemeToggle />
+
         {/* Notifications */}
-        <div className="relative">
+        <div className="relative" ref={notifRef}>
           <button
+            type="button"
+            aria-label="Toggle notifications"
             onClick={() => setShowNotifs(!showNotifs)}
-            className="relative w-9 h-9 rounded-xl bg-surface-elevated border border-surface-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:border-brand/30 transition-all"
+            className="relative w-8 h-8 rounded-md border border-surface-border flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
@@ -56,22 +85,22 @@ export function Topbar() {
           <AnimatePresence>
             {showNotifs && (
               <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 top-11 w-80 glass rounded-2xl border border-white/10 shadow-card overflow-hidden z-50"
+                exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                transition={{ duration: 0.12 }}
+                className="absolute right-0 top-10 w-72 bg-surface-card rounded-md border border-surface-border shadow-card overflow-hidden z-50"
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-                  <span className="text-sm font-semibold text-text-primary">Notifications</span>
-                  <div className="flex gap-2">
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
+                  <span className="text-sm font-medium text-text-primary">Notifications</span>
+                  <div className="flex gap-3 items-center">
                     {unreadCount > 0 && (
-                      <button onClick={handleMarkAll} className="text-xs text-brand-light hover:text-brand transition-colors">
+                      <button type="button" onClick={handleMarkAll} className="text-xs text-brand hover:text-brand-dark transition-colors">
                         Mark all read
                       </button>
                     )}
-                    <button onClick={() => setShowNotifs(false)}>
-                      <X className="w-4 h-4 text-text-muted hover:text-text-secondary" />
+                    <button type="button" aria-label="Close notifications" onClick={() => setShowNotifs(false)}>
+                      <X className="w-3.5 h-3.5 text-text-muted hover:text-text-secondary transition-colors" />
                     </button>
                   </div>
                 </div>
@@ -83,14 +112,14 @@ export function Topbar() {
                       <div
                         key={n.id}
                         onClick={() => handleMarkRead(n.id)}
-                        className={`px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5 last:border-0 ${!n.is_read ? 'bg-brand/5' : ''}`}
+                        className={`px-4 py-3 hover:bg-surface-elevated transition-colors cursor-pointer border-b border-surface-border last:border-0 ${!n.is_read ? 'bg-brand/8' : ''}`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-xs font-medium text-text-primary">{n.title}</p>
                             <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{n.body}</p>
                           </div>
-                          {!n.is_read && <div className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-1" />}
+                          {!n.is_read && <div className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0 mt-1" />}
                         </div>
                         <p className="text-[10px] text-text-muted mt-1">{formatRelativeTime(n.created_at)}</p>
                       </div>
@@ -102,13 +131,16 @@ export function Topbar() {
           </AnimatePresence>
         </div>
 
-        {/* User */}
+        {/* User avatar — links to own profile */}
         {user && (
-          <Avatar
-            name={`${user.first_name} ${user.last_name}`}
-            src={user.profile?.avatar}
-            size="sm"
-          />
+          <Link href="/profile" aria-label="My profile">
+            <Avatar
+              name={`${user.first_name} ${user.last_name}`}
+              src={user.profile?.avatar}
+              size="sm"
+              className="hover:ring-2 hover:ring-brand/40 transition-all cursor-pointer"
+            />
+          </Link>
         )}
       </div>
     </header>

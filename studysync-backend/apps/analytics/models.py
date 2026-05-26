@@ -28,3 +28,24 @@ class DailyStudyLog(models.Model):
         db_table = 'daily_study_logs'
         unique_together = ('user', 'date')
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.user.email} — {self.date}"
+
+
+class CourseGrade(models.Model):
+    user         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_grades')
+    course_name  = models.CharField(max_length=100)
+    target_grade = models.CharField(max_length=5, blank=True, default='')
+    assessments  = models.JSONField(default=list)
+    # [{name, score, max_score, weight, type: assignment|midterm|final}]
+    created_at   = models.DateTimeField(auto_now_add=True)
+    updated_at   = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'course_grades'
+        unique_together = ('user', 'course_name')
+        ordering = ['course_name']
+
+    def __str__(self):
+        return f"{self.user.email} — {self.course_name}"

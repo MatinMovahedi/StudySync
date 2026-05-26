@@ -47,6 +47,15 @@ class UserProfile(models.Model):
     github = models.CharField(max_length=100, blank=True, default='')
     total_study_hours = models.FloatField(default=0.0)
     total_sessions = models.IntegerField(default=0)
+    # Portfolio
+    skills   = models.JSONField(default=list, blank=True)
+    projects = models.JSONField(default=list, blank=True)
+    linkedin = models.CharField(max_length=100, blank=True, default='')
+    # Preferences
+    email_digest_enabled = models.BooleanField(default=True)
+    # 2FA
+    totp_secret    = models.CharField(max_length=64, blank=True, default='')
+    two_fa_enabled = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

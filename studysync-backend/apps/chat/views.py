@@ -10,7 +10,7 @@ class MessageHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         group_id = self.kwargs['group_id']
-        return Message.objects.filter(group_id=group_id).select_related('sender', 'sender__profile').order_by('-created_at')
+        return Message.objects.filter(group_id=group_id).select_related('sender', 'sender__profile').order_by('created_at')
 
 
 class MessageReactView(APIView):

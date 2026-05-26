@@ -20,14 +20,13 @@ export function useWebSocket(url: string | null, { onMessage, enabled = true }: 
     const socket = new WebSocket(wsUrl);
     ws.current = socket;
 
-    socket.onopen = () => console.log('[WS] connected:', url);
     socket.onmessage = (e) => {
       try { onMessageRef.current(JSON.parse(e.data)); } catch {}
     };
     socket.onclose = (e) => {
       if (!e.wasClean) setTimeout(connect, 3000);
     };
-    socket.onerror = (e) => console.error('[WS] error:', e);
+    socket.onerror = () => {};
   }, [url, enabled]);
 
   useEffect(() => {

@@ -6,8 +6,6 @@ import { ArrowRight, ArrowLeft, Check, Zap, GraduationCap, BookOpen, Brain, Cloc
 import toast from 'react-hot-toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { GradientText } from '../../components/shared/GradientText';
-import { AnimatedBackground } from '../../components/shared/AnimatedBackground';
 import { completeOnboarding } from '../../lib/api/auth';
 import { useAuthStore } from '../../lib/store/authStore';
 import { getMe } from '../../lib/api/auth';
@@ -65,21 +63,28 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen mesh-bg flex items-center justify-center relative overflow-hidden">
-      <AnimatedBackground />
-      <div className="relative z-10 w-full max-w-lg px-6 py-12">
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="w-full max-w-lg px-6 py-12">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
+            <Zap className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span className="text-sm font-semibold text-text-primary">StudySync</span>
+        </div>
+
         {/* Progress */}
-        <div className="flex items-center gap-2 mb-10">
+        <div className="flex items-center gap-2 mb-8">
           {STEPS.map((s, i) => (
             <div key={i} className="flex-1 flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-all duration-200 ${
                 i < step ? 'bg-brand border-brand text-white' :
-                i === step ? 'border-brand text-brand-light' : 'border-surface-border text-text-muted'
+                i === step ? 'border-brand text-brand' : 'border-surface-border text-text-muted'
               }`}>
                 {i < step ? <Check className="w-3 h-3" /> : i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 transition-all duration-500 ${i < step ? 'bg-brand' : 'bg-surface-border'}`} />
+                <div className={`flex-1 h-px transition-all duration-300 ${i < step ? 'bg-brand' : 'bg-surface-border'}`} />
               )}
             </div>
           ))}
@@ -88,21 +93,21 @@ export default function OnboardingPage() {
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="glass gradient-border rounded-2xl p-8"
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.25 }}
+            className="bg-surface-card border border-surface-border rounded-md p-6 shadow-card"
           >
             {step === 0 && (
-              <div className="flex flex-col gap-5">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center">
-                    <GraduationCap className="w-5 h-5 text-brand-light" />
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-9 h-9 rounded-md bg-emerald-950/40 flex items-center justify-center">
+                    <GraduationCap className="w-4.5 h-4.5 text-brand" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-text-primary">Your university</h2>
-                    <p className="text-sm text-text-muted">Where do you study?</p>
+                    <h2 className="text-base font-semibold text-text-primary">Your university</h2>
+                    <p className="text-xs text-text-muted">Where do you study?</p>
                   </div>
                 </div>
                 <Input label="University" placeholder="University of Toronto" value={data.university}
@@ -116,20 +121,22 @@ export default function OnboardingPage() {
 
             {step === 1 && (
               <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-accent-purple/20 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-accent-purple" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-9 h-9 rounded-md bg-emerald-950/40 flex items-center justify-center">
+                    <BookOpen className="w-4.5 h-4.5 text-brand" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-text-primary">Your courses</h2>
-                    <p className="text-sm text-text-muted">Select all that apply ({data.courses.length} selected)</p>
+                    <h2 className="text-base font-semibold text-text-primary">Your courses</h2>
+                    <p className="text-xs text-text-muted">Select all that apply ({data.courses.length} selected)</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {COURSES.map(c => (
-                    <button key={c} onClick={() => toggleCourse(c)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ${
-                        data.courses.includes(c) ? 'bg-brand border-brand text-white' : 'glass border-surface-border text-text-secondary hover:border-brand/40'
+                    <button key={c} type="button" onClick={() => toggleCourse(c)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                        data.courses.includes(c)
+                          ? 'bg-brand border-brand text-white'
+                          : 'bg-surface-card border-surface-border text-text-secondary hover:border-brand/50 hover:text-text-primary'
                       }`}>
                       {c}
                     </button>
@@ -140,22 +147,24 @@ export default function OnboardingPage() {
 
             {step === 2 && (
               <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-accent-cyan/20 flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-accent-cyan" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-9 h-9 rounded-md bg-emerald-950/40 flex items-center justify-center">
+                    <Brain className="w-4.5 h-4.5 text-brand" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-text-primary">Study style</h2>
-                    <p className="text-sm text-text-muted">How do you study best? Pick all that fit.</p>
+                    <h2 className="text-base font-semibold text-text-primary">Study style</h2>
+                    <p className="text-xs text-text-muted">How do you study best? Pick all that fit.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   {STUDY_STYLES.map(s => (
-                    <button key={s.id} onClick={() => toggleStyle(s.id)}
-                      className={`p-4 rounded-xl border text-left transition-all duration-200 ${
-                        data.study_style_tags.includes(s.id) ? 'bg-brand/10 border-brand/50 text-text-primary' : 'glass border-surface-border hover:border-brand/30'
+                    <button key={s.id} type="button" onClick={() => toggleStyle(s.id)}
+                      className={`p-3.5 rounded-md border text-left transition-colors ${
+                        data.study_style_tags.includes(s.id)
+                          ? 'bg-emerald-950/40 border-brand/40 text-text-primary'
+                          : 'bg-surface-card border-surface-border hover:border-brand/30 hover:bg-surface-elevated'
                       }`}>
-                      <div className="text-2xl mb-1">{s.icon}</div>
+                      <div className="text-xl mb-1">{s.icon}</div>
                       <div className="text-sm font-medium text-text-primary">{s.label}</div>
                       <div className="text-xs text-text-muted">{s.desc}</div>
                     </button>
@@ -166,27 +175,29 @@ export default function OnboardingPage() {
 
             {step === 3 && (
               <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-accent-emerald/20 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-accent-emerald" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-9 h-9 rounded-md bg-emerald-950/40 flex items-center justify-center">
+                    <Clock className="w-4.5 h-4.5 text-brand" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-text-primary">Best time to study</h2>
-                    <p className="text-sm text-text-muted">When are you most productive?</p>
+                    <h2 className="text-base font-semibold text-text-primary">Best time to study</h2>
+                    <p className="text-xs text-text-muted">When are you most productive?</p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   {AVAILABILITY.map(a => (
-                    <button key={a.id} onClick={() => setData(d => ({ ...d, availability: a.id }))}
-                      className={`p-4 rounded-xl border text-left flex items-center gap-4 transition-all duration-200 ${
-                        data.availability === a.id ? 'bg-brand/10 border-brand/50' : 'glass border-surface-border hover:border-brand/30'
+                    <button key={a.id} type="button" onClick={() => setData(d => ({ ...d, availability: a.id }))}
+                      className={`p-3 rounded-md border text-left flex items-center gap-3 transition-colors ${
+                        data.availability === a.id
+                          ? 'bg-emerald-950/40 border-brand/40'
+                          : 'bg-surface-card border-surface-border hover:bg-surface-elevated hover:border-brand/30'
                       }`}>
-                      <span className="text-2xl">{a.icon}</span>
+                      <span className="text-xl">{a.icon}</span>
                       <div>
                         <div className="text-sm font-medium text-text-primary">{a.label}</div>
                         <div className="text-xs text-text-muted">{a.sub}</div>
                       </div>
-                      {data.availability === a.id && <Check className="w-4 h-4 text-brand-light ml-auto" />}
+                      {data.availability === a.id && <Check className="w-4 h-4 text-brand ml-auto" />}
                     </button>
                   ))}
                 </div>
@@ -195,27 +206,28 @@ export default function OnboardingPage() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-2 mt-4">
           {step > 0 && (
-            <Button variant="glass" onClick={() => setStep(s => s - 1)} className="gap-2">
+            <Button variant="secondary" type="button" onClick={() => setStep(s => s - 1)}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
           <Button
-            className="flex-1 group"
+            type="button"
+            className="flex-1"
             onClick={step < STEPS.length - 1 ? () => setStep(s => s + 1) : finish}
             loading={loading}
           >
             {step < STEPS.length - 1 ? 'Continue' : 'Finish setup'}
             {step < STEPS.length - 1
-              ? <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              ? <ArrowRight className="w-4 h-4" />
               : <Zap className="w-4 h-4" />
             }
           </Button>
         </div>
 
         {step < STEPS.length - 1 && (
-          <button onClick={finish} className="w-full text-center text-xs text-text-muted hover:text-text-secondary mt-4 transition-colors">
+          <button type="button" onClick={finish} className="w-full text-center text-xs text-text-muted hover:text-text-secondary mt-3 transition-colors">
             Skip for now
           </button>
         )}

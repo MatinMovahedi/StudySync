@@ -9,4 +9,5 @@ urlpatterns = [
     path('summarize/', views.SummarizeView.as_view(), name='ai-summarize'),
     path('explain/', views.ExplainView.as_view(), name='ai-explain'),
     path('conversations/', views.ConversationListView.as_view(), name='ai-conversations'),
+    path('planner/', views.StudyPlannerView.as_view(), name='ai-planner'),
 ]

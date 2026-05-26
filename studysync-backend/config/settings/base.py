@@ -34,6 +34,10 @@ LOCAL_APPS = [
     'apps.analytics',
     'apps.campus',
     'apps.notifications',
+    'apps.gamification',
+    'apps.communities',
+    'apps.resources',
+    'apps.tutoring',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -148,3 +152,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 USE_MOCK_AI = config('USE_MOCK_AI', default=True, cast=bool)
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'StudySync <noreply@studysync.app>'

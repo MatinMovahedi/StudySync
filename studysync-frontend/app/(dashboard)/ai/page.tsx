@@ -3,7 +3,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Send, Sparkles, BookOpen, Layers, FileText, Lightbulb, RotateCcw, Check, X } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { GradientText } from '../../../components/shared/GradientText';
 import { Badge } from '../../../components/ui/badge';
 import { GlassCard } from '../../../components/shared/GlassCard';
 import { Skeleton } from '../../../components/ui/skeleton';
@@ -26,6 +25,8 @@ const TABS = [
   { id: 'explain' as Tab, label: 'Explain', icon: Lightbulb },
 ];
 
+const INPUT_CLASS = 'bg-surface-card border border-surface-border rounded-md px-3 h-9 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-colors';
+
 function FlipCard({ card }: { card: FlashCard }) {
   const [flipped, setFlipped] = useState(false);
   return (
@@ -36,13 +37,13 @@ function FlipCard({ card }: { card: FlashCard }) {
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
-        <div className="absolute inset-0 glass rounded-2xl flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden' }}>
+        <div className="absolute inset-0 bg-surface-card border border-surface-border rounded-md flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden' }}>
           <div className="text-[10px] text-text-muted uppercase tracking-wider mb-3">Question</div>
-          <p className="text-text-primary font-medium">{card.front}</p>
+          <p className="text-text-primary font-medium text-sm">{card.front}</p>
           <div className="mt-4 text-xs text-text-muted">Click to reveal answer</div>
         </div>
-        <div className="absolute inset-0 glass rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-brand/10 border border-brand/20" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-          <div className="text-[10px] text-brand-light uppercase tracking-wider mb-3">Answer</div>
+        <div className="absolute inset-0 bg-emerald-950/40 border border-emerald-700/40 rounded-md flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+          <div className="text-[10px] text-brand uppercase tracking-wider mb-3">Answer</div>
           <p className="text-text-primary text-sm">{card.back}</p>
         </div>
       </motion.div>
@@ -145,26 +146,22 @@ export default function AIPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.div variants={staggerItem} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-              <Brain className="w-5 h-5 text-brand-light" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold"><GradientText>AI Study Assistant</GradientText></h1>
-              <p className="text-text-muted text-sm">Powered by StudySync AI</p>
-            </div>
-          </div>
+        <motion.div variants={staggerItem} className="mb-7">
+          <p className="text-xs text-text-muted mb-1">Tools</p>
+          <h1 className="text-2xl font-semibold text-text-primary">AI Study Assistant</h1>
+          <p className="text-text-muted text-xs mt-1">Quiz generation, flashcards, summaries, and explanations.</p>
         </motion.div>
 
         {/* Tabs */}
         <motion.div variants={staggerItem} className="flex gap-2 flex-wrap mb-6">
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                tab === t.id ? 'bg-brand/15 border-brand/40 text-brand-light' : 'glass border-surface-border text-text-secondary hover:border-brand/30'
+            <button type="button" key={t.id} onClick={() => setTab(t.id)}
+              className={`flex items-center gap-2 h-8 px-3 rounded-md text-sm font-medium border transition-colors ${
+                tab === t.id
+                  ? 'bg-emerald-950/40 border-brand/30 text-brand'
+                  : 'bg-surface-card border-surface-border text-text-secondary hover:bg-surface-elevated hover:text-text-primary'
               }`}>
-              <t.icon className="w-4 h-4" />
+              <t.icon className="w-3.5 h-3.5" />
               {t.label}
             </button>
           ))}
@@ -175,24 +172,25 @@ export default function AIPage() {
 
             {/* CHAT TAB */}
             {tab === 'chat' && (
-              <div className="glass gradient-border rounded-2xl overflow-hidden flex flex-col" style={{ height: 560 }}>
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
-                  <div className="w-2 h-2 rounded-full bg-accent-emerald animate-pulse" />
+              <div className="bg-surface-card border border-surface-border rounded-md overflow-hidden flex flex-col" style={{ height: 560 }}>
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-border">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-sm font-medium text-text-primary">StudySync AI</span>
                   <Badge variant="emerald" className="text-[10px]">Online</Badge>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                   {messages.length === 0 && !streaming && (
                     <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                      <div className="w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center mb-4">
-                        <Brain className="w-7 h-7 text-brand-light" />
+                      <div className="w-10 h-10 rounded-md bg-emerald-950/40 border border-emerald-800/40 flex items-center justify-center mb-4">
+                        <Brain className="w-5 h-5 text-brand" />
                       </div>
-                      <h3 className="text-text-primary font-semibold mb-2">How can I help you study today?</h3>
-                      <p className="text-text-muted text-sm max-w-sm">Ask me to explain concepts, help with assignments, discuss topics, or study strategies.</p>
+                      <h3 className="text-sm font-semibold text-text-primary mb-1">How can I help you study today?</h3>
+                      <p className="text-text-muted text-xs max-w-sm">Ask me to explain concepts, help with assignments, or discuss study strategies.</p>
                       <div className="flex flex-wrap gap-2 mt-4 justify-center">
                         {['Explain recursion', 'What is Big-O notation?', 'Help with calculus', 'Study tips for exams'].map(s => (
-                          <button key={s} onClick={() => setInput(s)} className="glass px-3 py-1.5 rounded-lg text-xs text-text-secondary hover:text-text-primary hover:border-brand/30 transition-all">
+                          <button type="button" key={s} onClick={() => setInput(s)}
+                            className="border border-surface-border rounded-md px-3 py-1.5 text-xs text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors">
                             {s}
                           </button>
                         ))}
@@ -202,12 +200,14 @@ export default function AIPage() {
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
                       {msg.role === 'assistant' && (
-                        <div className="w-7 h-7 rounded-lg bg-brand/20 flex items-center justify-center flex-shrink-0 mt-1">
-                          <Brain className="w-3.5 h-3.5 text-brand-light" />
+                        <div className="w-7 h-7 rounded-md bg-emerald-950/40 border border-emerald-800/40 flex items-center justify-center flex-shrink-0 mt-1">
+                          <Brain className="w-3.5 h-3.5 text-brand" />
                         </div>
                       )}
-                      <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-                        msg.role === 'user' ? 'bg-brand text-white' : 'bg-surface-elevated text-text-primary border border-white/5'
+                      <div className={`max-w-[75%] rounded-md px-4 py-3 text-sm whitespace-pre-wrap ${
+                        msg.role === 'user'
+                          ? 'bg-brand text-white'
+                          : 'bg-surface-elevated text-text-primary'
                       }`}>
                         {msg.content}
                       </div>
@@ -215,10 +215,10 @@ export default function AIPage() {
                   ))}
                   {streaming && (
                     <div className="flex gap-3 justify-start">
-                      <div className="w-7 h-7 rounded-lg bg-brand/20 flex items-center justify-center flex-shrink-0 mt-1">
-                        <Brain className="w-3.5 h-3.5 text-brand-light" />
+                      <div className="w-7 h-7 rounded-md bg-emerald-950/40 border border-emerald-800/40 flex items-center justify-center flex-shrink-0 mt-1">
+                        <Brain className="w-3.5 h-3.5 text-brand" />
                       </div>
-                      <div className="max-w-[75%] rounded-2xl px-4 py-3 text-sm bg-surface-elevated text-text-primary border border-white/5 whitespace-pre-wrap">
+                      <div className="max-w-[75%] rounded-md px-4 py-3 text-sm bg-surface-elevated text-text-primary whitespace-pre-wrap">
                         {currentResponse || (
                           <div className="flex gap-1.5 items-center">
                             {[0,1,2].map(i => (
@@ -228,23 +228,23 @@ export default function AIPage() {
                             ))}
                           </div>
                         )}
-                        {currentResponse && <span className="inline-block w-0.5 h-4 bg-brand-light ml-0.5 animate-pulse" />}
+                        {currentResponse && <span className="inline-block w-0.5 h-4 bg-brand ml-0.5 animate-pulse" />}
                       </div>
                     </div>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t border-white/5">
-                  <div className="flex items-end gap-2 glass rounded-xl border border-white/10 px-3 py-2">
+                <div className="p-3 border-t border-surface-border">
+                  <div className="flex items-end gap-2 bg-surface-card border border-surface-border rounded-md px-3 py-2 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/20 transition-colors">
                     <textarea value={input} onChange={e => setInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                       placeholder="Ask anything about your studies..." rows={1}
                       className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none py-1 max-h-24"
                       style={{ fieldSizing: 'content' } as React.CSSProperties} />
-                    <button onClick={sendChat} disabled={!input.trim() || streaming}
-                      className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white disabled:opacity-40 hover:bg-brand-dark transition-colors active:scale-95">
-                      <Send className="w-4 h-4" />
+                    <button type="button" onClick={sendChat} disabled={!input.trim() || streaming}
+                      className="w-7 h-7 rounded-md bg-brand flex items-center justify-center text-white disabled:opacity-40 hover:bg-brand-dark transition-colors">
+                      <Send className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -253,51 +253,52 @@ export default function AIPage() {
 
             {/* QUIZ TAB */}
             {tab === 'quiz' && (
-              <div className="space-y-6">
-                <GlassCard hover={false}>
-                  <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-brand-light" /> Quiz Generator
+              <div className="space-y-5">
+                <div className="bg-surface-card border border-surface-border rounded-md p-5">
+                  <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-brand" /> Quiz Generator
                   </h2>
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <input value={quizTopic} onChange={e => setQuizTopic(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleGenQuiz()}
-                      placeholder="Enter topic (e.g. 'Binary Trees', 'Calculus derivatives')"
-                      className="flex-1 bg-surface-card border border-surface-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/40 transition-colors" />
+                      placeholder="Topic (e.g. 'Binary Trees', 'Calculus derivatives')"
+                      className={`flex-1 ${INPUT_CLASS}`} />
                     <select value={quizDifficulty} onChange={e => setQuizDifficulty(e.target.value)}
-                      className="bg-surface-card border border-surface-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-brand/40">
+                      aria-label="Quiz difficulty"
+                      className="bg-surface-card border border-surface-border rounded-md px-3 h-9 text-sm text-text-primary focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-colors">
                       <option value="easy">Easy</option>
                       <option value="medium">Medium</option>
                       <option value="hard">Hard</option>
                     </select>
                     <Button onClick={handleGenQuiz} loading={quizLoading} disabled={!quizTopic} className="flex-shrink-0">Generate</Button>
                   </div>
-                </GlassCard>
+                </div>
 
                 {quizLoading && (
-                  <div className="space-y-3">{Array.from({length: 3}).map((_,i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
+                  <div className="space-y-3">{Array.from({length: 3}).map((_,i) => <Skeleton key={i} className="h-28" />)}</div>
                 )}
 
                 {quizQuestions.length > 0 && !quizLoading && (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {quizQuestions.map((q, qi) => (
-                      <GlassCard key={qi} hover={false}>
+                      <div key={qi} className="bg-surface-card border border-surface-border rounded-md p-5">
                         <div className="flex items-start gap-3 mb-4">
-                          <span className="w-7 h-7 rounded-lg bg-brand/10 text-brand-light text-xs font-bold flex items-center justify-center flex-shrink-0">{qi+1}</span>
+                          <span className="w-6 h-6 rounded-md bg-emerald-950/40 text-brand text-xs font-bold flex items-center justify-center flex-shrink-0">{qi+1}</span>
                           <p className="text-sm font-medium text-text-primary leading-relaxed">{q.question}</p>
                         </div>
-                        <div className="space-y-2 ml-10">
+                        <div className="space-y-2 ml-9">
                           {q.options.map((opt, oi) => {
                             const letter = ['A','B','C','D'][oi];
                             const selected = selectedAnswers[qi] === letter;
                             const correct = quizRevealed && letter === q.answer;
                             const wrong = quizRevealed && selected && letter !== q.answer;
                             return (
-                              <button key={oi} onClick={() => !quizRevealed && setSelectedAnswers(a => ({...a, [qi]: letter}))}
-                                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${
-                                  correct ? 'bg-accent-emerald/10 border-accent-emerald/40 text-accent-emerald' :
-                                  wrong ? 'bg-accent-rose/10 border-accent-rose/40 text-accent-rose' :
-                                  selected ? 'bg-brand/10 border-brand/40 text-brand-light' :
-                                  'glass border-surface-border text-text-secondary hover:border-brand/30'
+                              <button type="button" key={oi} onClick={() => !quizRevealed && setSelectedAnswers(a => ({...a, [qi]: letter}))}
+                                className={`w-full text-left px-4 py-2.5 rounded-md text-sm border transition-colors ${
+                                  correct ? 'quiz-correct' :
+                                  wrong ? 'quiz-wrong' :
+                                  selected ? 'theme-emerald' :
+                                  'bg-surface-card border-surface-border text-text-secondary hover:bg-surface-elevated hover:text-text-primary'
                                 }`}>
                                 <span className="font-medium mr-2">{letter}.</span>{opt}
                                 {correct && <Check className="w-3.5 h-3.5 inline ml-2" />}
@@ -307,14 +308,14 @@ export default function AIPage() {
                           })}
                         </div>
                         {quizRevealed && (
-                          <div className="ml-10 mt-3 p-3 bg-brand/5 border border-brand/10 rounded-xl">
+                          <div className="ml-9 mt-3 p-3 bg-surface border border-surface-border rounded-md">
                             <p className="text-xs text-text-secondary">{q.explanation}</p>
                           </div>
                         )}
-                      </GlassCard>
+                      </div>
                     ))}
                     <div className="flex gap-3">
-                      <Button onClick={() => setQuizRevealed(true)} disabled={quizRevealed} variant="glass">Reveal Answers</Button>
+                      <Button onClick={() => setQuizRevealed(true)} disabled={quizRevealed} variant="secondary">Reveal Answers</Button>
                       <Button onClick={() => { setQuizQuestions([]); setSelectedAnswers({}); setQuizRevealed(false); }} variant="secondary">
                         <RotateCcw className="w-4 h-4" />
                       </Button>
@@ -326,21 +327,21 @@ export default function AIPage() {
 
             {/* FLASHCARDS TAB */}
             {tab === 'flashcards' && (
-              <div className="space-y-6">
-                <GlassCard hover={false}>
-                  <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-accent-purple" /> Flashcard Generator
+              <div className="space-y-5">
+                <div className="bg-surface-card border border-surface-border rounded-md p-5">
+                  <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-text-secondary" /> Flashcard Generator
                   </h2>
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     <input value={flashTopic} onChange={e => setFlashTopic(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleGenFlash()}
                       placeholder="Topic to generate flashcards for..."
-                      className="flex-1 bg-surface-card border border-surface-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/40 transition-colors" />
+                      className={`flex-1 ${INPUT_CLASS}`} />
                     <Button onClick={handleGenFlash} loading={flashLoading} disabled={!flashTopic}>Generate</Button>
                   </div>
-                  <p className="text-xs text-text-muted mt-2">Click any card to flip it and reveal the answer</p>
-                </GlassCard>
-                {flashLoading && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i)=><Skeleton key={i} className="h-48 rounded-2xl" />)}</div>}
+                  <p className="text-xs text-text-muted mt-2">Click any card to flip and reveal the answer</p>
+                </div>
+                {flashLoading && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i)=><Skeleton key={i} className="h-48" />)}</div>}
                 {flashCards.length > 0 && !flashLoading && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {flashCards.map((c, i) => <FlipCard key={i} card={c} />)}
@@ -351,54 +352,55 @@ export default function AIPage() {
 
             {/* SUMMARIZE TAB */}
             {tab === 'summarize' && (
-              <div className="space-y-6">
-                <GlassCard hover={false}>
-                  <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-accent-cyan" /> Note Summarizer
+              <div className="space-y-5">
+                <div className="bg-surface-card border border-surface-border rounded-md p-5">
+                  <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-text-secondary" /> Note Summarizer
                   </h2>
                   <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={8}
                     placeholder="Paste your lecture notes, textbook sections, or any study material here..."
-                    className="w-full bg-surface-card border border-surface-border rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/40 resize-none transition-colors" />
-                  <Button onClick={handleSummarize} loading={sumLoading} disabled={!notes} className="mt-4">
+                    className="w-full bg-surface-card border border-surface-border rounded-md px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 resize-none transition-colors" />
+                  <Button onClick={handleSummarize} loading={sumLoading} disabled={!notes} className="mt-3">
                     Summarize notes
                   </Button>
-                </GlassCard>
-                {sumLoading && <Skeleton className="h-64 rounded-2xl" />}
+                </div>
+                {sumLoading && <Skeleton className="h-64" />}
                 {summary && !sumLoading && (
-                  <GlassCard hover={false} className="prose prose-sm prose-invert max-w-none">
+                  <div className="bg-surface-card border border-surface-border rounded-md p-5">
                     <pre className="text-text-primary text-sm whitespace-pre-wrap font-sans leading-relaxed">{summary}</pre>
-                  </GlassCard>
+                  </div>
                 )}
               </div>
             )}
 
             {/* EXPLAIN TAB */}
             {tab === 'explain' && (
-              <div className="space-y-6">
-                <GlassCard hover={false}>
-                  <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-accent-amber" /> Concept Explainer
+              <div className="space-y-5">
+                <div className="bg-surface-card border border-surface-border rounded-md p-5">
+                  <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-amber-500" /> Concept Explainer
                   </h2>
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     <input value={concept} onChange={e => setConcept(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleExplain()}
                       placeholder="e.g. 'Gradient descent', 'Bayes theorem', 'Polymorphism'"
-                      className="flex-1 bg-surface-card border border-surface-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/40 transition-colors" />
+                      className={`flex-1 ${INPUT_CLASS}`} />
                     <Button onClick={handleExplain} loading={expLoading} disabled={!concept}>Explain</Button>
                   </div>
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {['Big-O Notation', 'Recursion', 'SQL Joins', 'Eigenvalues', 'SOLID Principles'].map(s => (
-                      <button key={s} onClick={() => setConcept(s)} className="glass px-3 py-1.5 rounded-lg text-xs text-text-muted hover:text-text-secondary hover:border-brand/30 transition-all">
+                      <button type="button" key={s} onClick={() => setConcept(s)}
+                        className="border border-surface-border rounded-md px-3 py-1.5 text-xs text-text-muted hover:bg-surface-elevated hover:text-text-secondary transition-colors">
                         {s}
                       </button>
                     ))}
                   </div>
-                </GlassCard>
-                {expLoading && <Skeleton className="h-48 rounded-2xl" />}
+                </div>
+                {expLoading && <Skeleton className="h-48" />}
                 {explanation && !expLoading && (
-                  <GlassCard hover={false}>
+                  <div className="bg-surface-card border border-surface-border rounded-md p-5">
                     <pre className="text-text-primary text-sm whitespace-pre-wrap font-sans leading-relaxed">{explanation}</pre>
-                  </GlassCard>
+                  </div>
                 )}
               </div>
             )}

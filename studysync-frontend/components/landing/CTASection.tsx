@@ -1,40 +1,35 @@
 'use client';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { Button } from '../ui/button';
-import { GradientText } from '../shared/GradientText';
 
 export function CTASection() {
   return (
-    <section className="py-32 relative overflow-hidden">
-      <div className="absolute inset-0 mesh-bg opacity-50" />
+    <section className="py-24 bg-surface-card border-t border-surface-border">
       <motion.div
-        className="relative z-10 max-w-4xl mx-auto px-6 text-center"
-        initial={{ opacity: 0, y: 30 }}
+        className="max-w-3xl mx-auto px-6 text-center"
+        initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.5 }}
       >
-        <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 mb-8">
-          <Zap className="w-4 h-4 text-brand-light" />
+        <div className="inline-flex items-center gap-2 border border-surface-border rounded-md px-3 py-1.5 mb-8">
+          <Zap className="w-3.5 h-3.5 text-brand" />
           <span className="text-sm text-text-secondary">Free forever for students</span>
         </div>
-        <h2 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-          Ready to ace your <GradientText>next exam?</GradientText>
+        <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-5 leading-tight tracking-tight">
+          Ready to ace your next exam?
         </h2>
-        <p className="text-xl text-text-secondary mb-10 max-w-xl mx-auto">
+        <p className="text-lg text-text-secondary mb-9 max-w-lg mx-auto">
           Join 10,000+ students already using StudySync. Set up your profile and find your first study group in under 2 minutes.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/signup">
-            <Button size="lg" className="group px-8">
-              Get started — it&apos;s free
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <Button size="lg">Get started — it&apos;s free</Button>
           </Link>
           <Link href="/login">
-            <Button variant="glass" size="lg" className="px-8">Already have an account?</Button>
+            <Button variant="secondary" size="lg">Already have an account?</Button>
           </Link>
         </div>
       </motion.div>

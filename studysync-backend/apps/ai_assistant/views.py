@@ -4,9 +4,9 @@ from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, status
-from .models import AIConversation, FlashCard
-from .serializers import AIConversationSerializer, FlashCardSerializer
-from .openai_client import chat_completion_stream, generate_quiz, generate_flashcards, summarize_notes, explain_concept
+from .models import AIConversation, FlashCard, StudyPlan
+from .serializers import AIConversationSerializer, FlashCardSerializer, StudyPlanSerializer
+from .openai_client import chat_completion_stream, generate_quiz, generate_flashcards, summarize_notes, explain_concept, generate_study_plan
 
 
 class AIChatStreamView(APIView):
@@ -98,3 +98,23 @@ class ConversationListView(generics.ListAPIView):
 
     def get_queryset(self):
         return AIConversation.objects.filter(user=self.request.user)
+
+
+class StudyPlannerView(APIView):
+    def get(self, request):
+        plans = StudyPlan.objects.filter(user=request.user)[:5]
+        return Response(StudyPlanSerializer(plans, many=True).data)
+
+    def post(self, request):
+        goal = request.data.get('goal', '')
+        hours_per_day = max(1, min(8, int(request.data.get('hours_per_day', 2))))
+        week_start = request.data.get('week_start')
+        courses = getattr(request.user.profile, 'courses', []) if hasattr(request.user, 'profile') else []
+        plan_data = generate_study_plan(goal, hours_per_day, courses)
+        plan = StudyPlan.objects.create(
+            user=request.user,
+            week_start=week_start or __import__('datetime').date.today().isoformat(),
+            goal=goal,
+            plan_data=plan_data,
+        )
+        return Response(StudyPlanSerializer(plan).data, status=status.HTTP_201_CREATED)

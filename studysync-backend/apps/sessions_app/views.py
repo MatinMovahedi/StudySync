@@ -19,7 +19,10 @@ class StudySessionListCreateView(generics.ListCreateAPIView):
 
 class StudySessionDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudySessionSerializer
-    queryset = StudySession.objects.all()
+
+    def get_queryset(self):
+        user_groups = self.request.user.study_groups.values_list('id', flat=True)
+        return StudySession.objects.filter(group__in=user_groups)
 
 
 class PomodoroStartView(APIView):

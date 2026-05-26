@@ -1,13 +1,13 @@
 import { cn } from '../../lib/utils/cn';
 
 const variants: Record<string, string> = {
-  default: 'bg-brand/10 text-brand-light border-brand/20',
-  purple: 'bg-accent-purple/10 text-accent-purple border-accent-purple/20',
-  cyan: 'bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20',
-  emerald: 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20',
-  amber: 'bg-accent-amber/10 text-accent-amber border-accent-amber/20',
-  rose: 'bg-accent-rose/10 text-accent-rose border-accent-rose/20',
-  muted: 'bg-white/5 text-text-secondary border-white/10',
+  default:  'theme-emerald',
+  emerald:  'theme-emerald',
+  rose:     'theme-rose',
+  amber:    'theme-amber',
+  muted:    'theme-muted',
+  purple:   'theme-purple',
+  cyan:     'theme-cyan',
 };
 
 interface BadgeProps {

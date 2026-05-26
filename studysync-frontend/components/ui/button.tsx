@@ -9,17 +9,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-brand hover:bg-brand-dark text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]',
-  secondary: 'bg-surface-elevated hover:bg-surface-card text-text-primary border border-surface-border hover:border-brand/40',
-  ghost: 'hover:bg-white/5 text-text-secondary hover:text-text-primary',
-  glass: 'backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 hover:border-brand/30 text-text-primary',
-  danger: 'bg-accent-rose/10 hover:bg-accent-rose/20 text-accent-rose border border-accent-rose/20',
+  primary: 'bg-brand hover:bg-brand-dark text-white transition-colors',
+  secondary: 'bg-transparent border border-surface-border text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors',
+  ghost: 'text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors',
+  glass: 'bg-transparent border border-surface-border text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors',
+  danger: 'bg-rose-600 hover:bg-rose-500 text-white transition-colors',
 };
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm rounded-lg',
-  md: 'px-4 py-2 text-sm rounded-xl',
-  lg: 'px-6 py-3 text-base rounded-xl',
+  sm: 'h-7 px-3 text-sm rounded-md',
+  md: 'h-9 px-4 text-sm rounded-md',
+  lg: 'h-10 px-5 text-sm rounded-md',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -28,7 +28,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95',
+        'inline-flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-1',
         variants[variant],
         sizes[size],
         className

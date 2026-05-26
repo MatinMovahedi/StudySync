@@ -1,10 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Coffee, Zap, Settings } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Zap } from 'lucide-react';
 import { usePomodoro } from '../../../hooks/usePomodoro';
 import { GlassCard } from '../../../components/shared/GlassCard';
-import { GradientText } from '../../../components/shared/GradientText';
 import { Button } from '../../../components/ui/button';
 import { staggerContainer, staggerItem } from '../../../lib/utils/animations';
 
@@ -21,16 +20,16 @@ function CircularTimer({ progress, phase }: { progress: number; phase: string })
 
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="none" />
+      <circle cx={size/2} cy={size/2} r={r} stroke="#2a2a2a" strokeWidth={strokeWidth} fill="none" />
       <circle cx={size/2} cy={size/2} r={r} stroke={color} strokeWidth={strokeWidth} fill="none"
         strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.5s ease', filter: `drop-shadow(0 0 8px ${color}80)` }} />
+        strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.5s ease' }} />
     </svg>
   );
 }
 
 export default function PomodoroPage() {
-  const { phase, secondsLeft, isRunning, sessionCount, workDuration, subject, start, pause, resume, reset, progress, setSubject } = usePomodoro();
+  const { phase, secondsLeft, isRunning, sessionCount, workDuration, subject, start, pause, resume, reset, progress, setSubject, setPhase } = usePomodoro();
   const [subjectInput, setSubjectInput] = useState(subject);
 
   useEffect(() => { document.title = `${Math.floor(secondsLeft/60)}:${String(secondsLeft%60).padStart(2,'0')} — ${PHASE_LABELS[phase as keyof typeof PHASE_LABELS]} · StudySync`; }, [secondsLeft, phase]);
@@ -48,16 +47,19 @@ export default function PomodoroPage() {
     <div className="p-6 max-w-2xl mx-auto">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
         <motion.div variants={staggerItem} className="mb-8 text-center">
-          <h1 className="text-3xl font-bold"><GradientText>Pomodoro Timer</GradientText></h1>
-          <p className="text-text-secondary text-sm mt-1">Stay focused, take breaks, repeat.</p>
+          <h1 className="text-2xl font-semibold text-text-primary">Pomodoro Timer</h1>
+          <p className="text-text-muted text-xs mt-1">Stay focused, take breaks, repeat.</p>
         </motion.div>
 
         {/* Phase selector */}
         <motion.div variants={staggerItem} className="flex justify-center gap-2 mb-8">
           {(['work', 'short_break', 'long_break'] as const).map(p => (
-            <button key={p} className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 ${
-              phase === p ? 'text-white border-transparent' : 'glass border-surface-border text-text-secondary hover:border-white/20'
-            }`} style={phase === p ? { background: color, boxShadow: `0 0 15px ${color}50` } : {}}>
+            <button type="button" key={p}
+              onClick={() => { if (!isRunning) setPhase(p); }}
+              className={`h-8 px-4 rounded-md text-sm font-medium border transition-colors ${
+                phase === p ? 'text-white border-transparent' : 'bg-surface-card border-surface-border text-text-secondary hover:bg-surface-elevated'
+              } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+              style={phase === p ? { background: PHASE_COLORS[p] } : {}}>
               {PHASE_LABELS[p]}
             </button>
           ))}
@@ -97,7 +99,7 @@ export default function PomodoroPage() {
               value={subjectInput}
               onChange={e => setSubjectInput(e.target.value)}
               placeholder="What are you studying? (optional)"
-              className="w-full bg-surface-card border border-surface-border rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/40 transition-colors text-center"
+              className="w-full bg-surface-card border border-surface-border rounded-md px-4 h-9 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-colors text-center"
             />
           </motion.div>
         )}
@@ -105,22 +107,19 @@ export default function PomodoroPage() {
         {/* Controls */}
         <motion.div variants={staggerItem} className="flex justify-center gap-3 mb-8">
           <button
+            type="button"
             onClick={reset}
-            className="w-12 h-12 rounded-xl glass border border-surface-border flex items-center justify-center text-text-muted hover:text-text-secondary transition-all active:scale-95"
+            className="w-12 h-12 rounded-md bg-surface-card border border-surface-border flex items-center justify-center text-text-muted hover:text-text-secondary hover:bg-surface-elevated transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
           <button
+            type="button"
             onClick={isRunning ? pause : (sessionCount === 0 && !secondsLeft ? handleStart : resume)}
-            className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl transition-all active:scale-95 font-bold"
-            style={{ background: color, boxShadow: `0 0 30px ${color}50` }}
+            className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl transition-colors font-bold"
+            style={{ background: color }}
           >
             {isRunning ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
-          </button>
-          <button
-            className="w-12 h-12 rounded-xl glass border border-surface-border flex items-center justify-center text-text-muted hover:text-text-secondary transition-all"
-          >
-            <Settings className="w-4 h-4" />
           </button>
         </motion.div>
 
@@ -128,12 +127,12 @@ export default function PomodoroPage() {
         <motion.div variants={staggerItem}>
           <GlassCard className="grid grid-cols-3 gap-4 text-center p-5" hover={false}>
             {[
-              { icon: <Zap className="w-4 h-4" />, label: 'Focus', value: `${workDuration}m`, color: '#6366f1' },
-              { icon: <Coffee className="w-4 h-4" />, label: 'Short break', value: '5m', color: '#10b981' },
-              { icon: <Coffee className="w-4 h-4" />, label: 'Long break', value: '15m', color: '#06b6d4' },
+              { icon: <Zap className="w-4 h-4 text-brand" />, label: 'Focus', value: `${workDuration}m` },
+              { icon: <Coffee className="w-4 h-4 text-emerald-500" />, label: 'Short break', value: '5m' },
+              { icon: <Coffee className="w-4 h-4 text-text-muted" />, label: 'Long break', value: '15m' },
             ].map((item, i) => (
               <div key={i}>
-                <div className="flex items-center justify-center gap-1.5 mb-1" style={{ color: item.color }}>
+                <div className="flex items-center justify-center gap-1.5 mb-1">
                   {item.icon}
                   <span className="text-base font-bold text-text-primary">{item.value}</span>
                 </div>

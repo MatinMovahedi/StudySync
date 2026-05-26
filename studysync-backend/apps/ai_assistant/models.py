@@ -13,6 +13,9 @@ class AIConversation(models.Model):
         db_table = 'ai_conversations'
         ordering = ['-updated_at']
 
+    def __str__(self):
+        return f"{self.user.email} — {self.title}"
+
 
 class FlashCard(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='flashcards')
@@ -29,3 +32,22 @@ class FlashCard(models.Model):
     class Meta:
         db_table = 'flashcards'
         ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.front[:60]} ({self.deck_name})"
+
+
+class StudyPlan(models.Model):
+    user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='study_plans')
+    week_start = models.DateField()
+    goal       = models.TextField(blank=True, default='')
+    plan_data  = models.JSONField(default=list)
+    # [{day: 'Monday', subject: 'CS401', duration_min: 60, task: 'Review DP patterns', priority: 'high'}]
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'study_plans'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} plan starting {self.week_start}"

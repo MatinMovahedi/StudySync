@@ -1,6 +1,8 @@
 import { Navbar } from '../components/landing/Navbar';
 import { HeroSection } from '../components/landing/HeroSection';
+import { StatsSection } from '../components/landing/StatsSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
+import { HowItWorksSection } from '../components/landing/HowItWorksSection';
 import { TestimonialsSection } from '../components/landing/TestimonialsSection';
 import { CTASection } from '../components/landing/CTASection';
 import { Zap } from 'lucide-react';
@@ -11,7 +13,9 @@ export default function LandingPage() {
     <div className="min-h-screen bg-surface">
       <Navbar />
       <HeroSection />
+      <StatsSection />
       <FeaturesSection />
+      <HowItWorksSection />
       <TestimonialsSection />
       <CTASection />
 

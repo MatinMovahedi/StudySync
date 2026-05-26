@@ -27,3 +27,13 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message by {self.sender} in {self.group}"
+
+
+class FocusRoom(models.Model):
+    group = models.OneToOneField('groups.StudyGroup', on_delete=models.CASCADE, related_name='focus_room')
+    started_at = models.DateTimeField()
+    duration = models.PositiveIntegerField()
+    started_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        db_table = 'focus_rooms'

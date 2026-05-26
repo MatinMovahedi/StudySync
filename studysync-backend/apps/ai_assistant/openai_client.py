@@ -61,6 +61,39 @@ def summarize_notes(notes: str) -> str:
     return response.choices[0].message.content
 
 
+MOCK_STUDY_PLAN = [
+    {'day': 'Monday',    'subject': 'CS401',  'duration_min': 60, 'task': 'Review dynamic programming patterns',       'priority': 'high'},
+    {'day': 'Tuesday',   'subject': 'MATH201', 'duration_min': 45, 'task': 'Practice integration techniques',           'priority': 'medium'},
+    {'day': 'Wednesday', 'subject': 'CS401',  'duration_min': 90, 'task': 'Solve 3 graph algorithm problems',          'priority': 'high'},
+    {'day': 'Thursday',  'subject': 'CMPUT301','duration_min': 60, 'task': 'Review UML diagrams and design patterns',   'priority': 'medium'},
+    {'day': 'Friday',    'subject': 'MATH201', 'duration_min': 45, 'task': 'Complete problem set 5',                    'priority': 'high'},
+    {'day': 'Saturday',  'subject': 'CS401',  'duration_min': 120,'task': 'Past exam practice — timed simulation',     'priority': 'high'},
+    {'day': 'Sunday',    'subject': 'CMPUT301','duration_min': 60, 'task': 'Read project requirements + plan sprint',   'priority': 'low'},
+]
+
+
+def generate_study_plan(goal: str, hours_per_day: int, courses: list) -> list:
+    if settings.USE_MOCK_AI:
+        return MOCK_STUDY_PLAN
+    from openai import OpenAI
+    import json
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    prompt = (
+        f"You are a university study planner. Generate a 7-day study plan.\n"
+        f"Goal: {goal}\n"
+        f"Available hours per day: {hours_per_day}\n"
+        f"Courses: {', '.join(courses) if courses else 'General studies'}\n\n"
+        f"Return a JSON object with key 'plan' containing an array of 7 objects, one per day, each with:\n"
+        f"day (Mon–Sun), subject (course name), duration_min (int), task (string), priority (high/medium/low)"
+    )
+    response = client.chat.completions.create(
+        model='gpt-4o',
+        messages=[{'role': 'user', 'content': prompt}],
+        response_format={'type': 'json_object'},
+    )
+    return json.loads(response.choices[0].message.content).get('plan', MOCK_STUDY_PLAN)
+
+
 def explain_concept(concept: str, level: str = 'intermediate') -> str:
     if settings.USE_MOCK_AI:
         return f"## {concept}\n\nThis is a fascinating topic! Let me explain it at the {level} level.\n\nThe core idea behind {concept} is that it provides a structured way to think about complex problems. At its heart, it's about understanding the relationships between components and how they interact.\n\n### Key Principles\n1. **Foundation** — Start with the basics and build up\n2. **Pattern Recognition** — Identify repeating structures\n3. **Application** — Connect theory to real-world scenarios\n\n### Why It Matters\nUnderstanding {concept} gives you mental tools that apply across many domains, making you a more versatile problem solver.\n\nWould you like me to dive deeper into any specific aspect?"
