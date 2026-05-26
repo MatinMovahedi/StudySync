@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Brain, User, Settings, BarChart3, Timer,
   Zap, ChevronLeft, ChevronRight, LogOut, MapPin, Headphones, Trophy, Hash,
-  CalendarDays, BookOpen, Library, GraduationCap
+  CalendarDays, BookOpen, Library, GraduationCap, CalendarCheck
 } from 'lucide-react';
 import { useUIStore } from '../../lib/store/uiStore';
 import { useAuthStore } from '../../lib/store/authStore';
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/communities', icon: Hash, label: 'Communities' },
   { href: '/groups', icon: Users, label: 'Study Groups' },
   { href: '/ai', icon: Brain, label: 'AI Assistant' },
+  { href: '/schedule', icon: CalendarCheck, label: 'Schedule' },
   { href: '/planner', icon: CalendarDays, label: 'Study Planner' },
   { href: '/pomodoro', icon: Timer, label: 'Pomodoro' },
   { href: '/focus', icon: Headphones, label: 'Focus Rooms' },

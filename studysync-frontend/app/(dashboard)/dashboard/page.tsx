@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const { onlineUsers } = useChatStore();
   const { data: groups, isLoading: groupsLoading } = useQuery({ queryKey: ['my-groups'], queryFn: getMyGroups });
   const { data: streak } = useQuery({ queryKey: ['streak'], queryFn: getStreak });
-  const { data: sessions } = useQuery({ queryKey: ['sessions'], queryFn: getSessions });
+  const { data: sessions } = useQuery<import('../../../lib/api/sessions').StudySession[]>({ queryKey: ['sessions'], queryFn: () => getSessions() });
 
   const hour = new Date().getHours();
   const greeting = GREETINGS[hour < 12 ? 0 : hour < 17 ? 1 : 2];

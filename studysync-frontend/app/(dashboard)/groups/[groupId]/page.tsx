@@ -27,8 +27,8 @@ export default function GroupDetailPage() {
 
   const { data: group, isLoading } = useQuery({ queryKey: ['group', id], queryFn: () => getGroup(id) });
   const { data: members } = useQuery({ queryKey: ['group-members', id], queryFn: () => getGroupMembers(id) });
-  const { data: allSessions } = useQuery({ queryKey: ['sessions'], queryFn: getSessions });
-  const sessions = allSessions?.filter((s: { group: number }) => s.group === id) || [];
+  const { data: allSessions } = useQuery<import('../../../../lib/api/sessions').StudySession[]>({ queryKey: ['sessions'], queryFn: () => getSessions() });
+  const sessions = allSessions?.filter(s => s.group === id) || [];
 
   const joinMut = useMutation({ mutationFn: () => joinGroup(id), onSuccess: () => { toast.success('Joined!'); qc.invalidateQueries({ queryKey: ['group', id] }); } });
   const leaveMut = useMutation({ mutationFn: () => leaveGroup(id), onSuccess: () => { toast.success('Left group'); router.push('/groups'); } });

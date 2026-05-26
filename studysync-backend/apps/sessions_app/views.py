@@ -11,7 +11,14 @@ class StudySessionListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user_groups = self.request.user.study_groups.values_list('id', flat=True)
-        return StudySession.objects.filter(group__in=user_groups, scheduled_at__gte=timezone.now()).order_by('scheduled_at')
+        qs = StudySession.objects.filter(group__in=user_groups)
+        from_date = self.request.query_params.get('from')
+        to_date = self.request.query_params.get('to')
+        if from_date and to_date:
+            qs = qs.filter(scheduled_at__date__gte=from_date, scheduled_at__date__lte=to_date)
+        else:
+            qs = qs.filter(scheduled_at__gte=timezone.now())
+        return qs.order_by('scheduled_at')
 
     def get_serializer_context(self):
         return {'request': self.request}

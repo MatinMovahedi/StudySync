@@ -5,6 +5,7 @@ from apps.users.serializers import UserMiniSerializer
 
 class StudySessionSerializer(serializers.ModelSerializer):
     created_by = UserMiniSerializer(read_only=True)
+    group_name = serializers.CharField(source='group.name', read_only=True)
 
     class Meta:
         model = StudySession

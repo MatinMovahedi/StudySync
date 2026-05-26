@@ -1,16 +1,22 @@
 import api from './client';
 
-interface StudySession {
+export interface StudySession {
   id: number;
   title: string;
+  description: string;
   scheduled_at: string;
   duration_minutes: number;
+  location: string;
   is_online: boolean;
   join_link: string;
+  max_participants: number;
   group: number;
+  group_name: string;
+  created_by: { id: number; first_name: string; username: string } | null;
+  created_at: string;
 }
 
-interface PomodoroSession {
+export interface PomodoroSession {
   id: number;
   duration_minutes: number;
   subject: string;
@@ -25,10 +31,20 @@ function unwrapList<T>(r: { data: unknown }): T[] {
   return [];
 }
 
-export const getSessions = () => api.get('/api/sessions/').then(r => unwrapList<StudySession>(r));
-export const createSession = (data: Record<string, unknown>) => api.post('/api/sessions/', data).then(r => r.data);
+export const getSessions = (from?: string, to?: string) =>
+  api.get('/api/sessions/', { params: from && to ? { from, to } : undefined }).then(r => unwrapList<StudySession>(r));
+
+export const createSession = (data: Record<string, unknown>) =>
+  api.post('/api/sessions/', data).then(r => r.data as StudySession);
+
+export const deleteSession = (id: number) =>
+  api.delete(`/api/sessions/${id}/`);
+
 export const startPomodoro = (duration_minutes: number, subject: string) =>
   api.post('/api/sessions/pomodoro/start/', { duration_minutes, subject }).then(r => r.data as PomodoroSession);
+
 export const completePomodoro = (id: number) =>
   api.post(`/api/sessions/pomodoro/${id}/complete/`).then(r => r.data);
-export const getPomodoroHistory = () => api.get('/api/sessions/pomodoro/history/').then(r => unwrapList<PomodoroSession>(r));
+
+export const getPomodoroHistory = () =>
+  api.get('/api/sessions/pomodoro/history/').then(r => unwrapList<PomodoroSession>(r));

@@ -20,8 +20,13 @@ export interface UserProfile {
   availability: string;
   website: string;
   github: string;
+  linkedin: string;
+  skills: string[];
+  projects: { title: string; description: string; url: string; tech_stack: string[] }[];
   total_study_hours: number;
   total_sessions: number;
+  email_digest_enabled: boolean;
+  two_fa_enabled: boolean;
 }
 
 export interface StudyGroup {

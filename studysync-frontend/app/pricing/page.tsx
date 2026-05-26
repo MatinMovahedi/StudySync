@@ -221,7 +221,7 @@ export default function PricingPage() {
               <Link href={plan.href} className="block">
                 <Button
                   className={`w-full ${plan.highlight ? '' : 'variant-ghost'}`}
-                  variant={plan.highlight ? 'default' : 'outline'}
+                  variant={plan.highlight ? 'primary' : 'secondary'}
                 >
                   {plan.cta}
                 </Button>

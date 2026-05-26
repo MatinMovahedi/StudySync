@@ -1,15 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Brain, Hash, User, Library } from 'lucide-react';
+import { LayoutDashboard, Users, Brain, Hash, User, Library, CalendarCheck } from 'lucide-react';
 import { cn } from '../../lib/utils/cn';
 
 const tabs = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Home' },
+  { href: '/schedule', icon: CalendarCheck, label: 'Schedule' },
   { href: '/groups', icon: Users, label: 'Groups' },
   { href: '/ai', icon: Brain, label: 'AI' },
   { href: '/communities', icon: Hash, label: 'Community' },
-  { href: '/resources', icon: Library, label: 'Resources' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 

@@ -129,6 +129,52 @@ html[data-theme="light"] .quiz-wrong {
   background-size: 30px 30px;
 }
 
+/* ─── Schedule calendar grid ─────────────────────────────────────────────── */
+/* 15 hours (7am–10pm) × 40 px/hr = 600 px total height */
+.schedule-col-height { height: 600px; }
+
+/* Positioned by --hour-offset CSS custom property (set inline per element) */
+.schedule-hour-label {
+  position: absolute;
+  right: 0.5rem;
+  font-size: 10px;
+  top: var(--hour-offset);
+  transform: translateY(-50%);
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+.schedule-hour-line {
+  position: absolute;
+  inset-inline: 0;
+  top: var(--hour-offset);
+  border-top-width: 1px;
+}
+.schedule-half-line {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--hour-offset) + 20px); /* half of 40px */
+  border-top-width: 1px;
+}
+.schedule-now-line {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  top: var(--now-offset);
+}
+/* Session blocks — top/height/width/left set via CSS vars */
+.schedule-session {
+  position: absolute;
+  overflow: hidden;
+  top: var(--s-top);
+  height: var(--s-height);
+  width: calc(var(--s-width) - 3px);
+  left: calc(var(--s-left) + 2px);
+}
+
 /* ─── Base ───────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
