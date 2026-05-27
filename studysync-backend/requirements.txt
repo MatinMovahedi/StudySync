@@ -14,3 +14,4 @@ whitenoise==6.9.0
 dj-database-url==2.3.0
 pyotp==2.9.0
 qrcode[pil]==8.1
+ably==2.0.3

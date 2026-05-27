@@ -21,9 +21,11 @@ export const useChatStore = create<ChatState>((set) => ({
   typingUsers: {},
   onlineUsers: {},
   addMessage: (groupId, message) =>
-    set((state) => ({
-      messages: { ...state.messages, [groupId]: [...(state.messages[groupId] || []), message] },
-    })),
+    set((state) => {
+      const existing = state.messages[groupId] || [];
+      if (existing.some(m => m.id === message.id)) return state;
+      return { messages: { ...state.messages, [groupId]: [...existing, message] } };
+    }),
   setMessages: (groupId, messages) =>
     set((state) => ({ messages: { ...state.messages, [groupId]: messages } })),
   setTyping: (groupId, user, isTyping) =>

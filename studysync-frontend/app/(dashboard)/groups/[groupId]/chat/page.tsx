@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Smile, ArrowLeft, Users, Hash } from 'lucide-react';
+import { Send, Smile, ArrowLeft, Users, Hash, PenLine } from 'lucide-react';
 import Link from 'next/link';
 import { useChat } from '../../../../../hooks/useChat';
 import { getGroup, getGroupMembers } from '../../../../../lib/api/groups';
@@ -84,6 +84,13 @@ export default function ChatPage() {
             <div className="text-sm font-semibold text-text-primary truncate">{group?.name || 'Loading...'}</div>
             <div className="text-xs text-text-muted">{group?.member_count} members</div>
           </div>
+          <Link
+            href={`/groups/${id}/whiteboard`}
+            className="w-8 h-8 rounded-md flex items-center justify-center text-text-muted hover:bg-surface-elevated hover:text-text-secondary transition-colors"
+            title="Open whiteboard"
+          >
+            <PenLine className="w-4 h-4" />
+          </Link>
           <button
             type="button"
             onClick={() => setShowMembers(!showMembers)}

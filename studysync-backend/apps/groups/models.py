@@ -63,9 +63,25 @@ class Whiteboard(models.Model):
     state = models.JSONField(default=dict)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+    active_viewers = models.JSONField(default=list, blank=True)
 
     class Meta:
         db_table = 'whiteboards'
 
     def __str__(self):
         return f"Whiteboard for {self.group.name}"
+
+
+class WhiteboardSnapshot(models.Model):
+    whiteboard = models.ForeignKey(Whiteboard, on_delete=models.CASCADE, related_name='snapshots')
+    name = models.CharField(max_length=100)
+    state = models.JSONField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'whiteboard_snapshots'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} — {self.whiteboard.group.name}"

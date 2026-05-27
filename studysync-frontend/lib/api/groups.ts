@@ -30,8 +30,25 @@ export interface WhiteboardData {
   state: Record<string, unknown>;
   updated_at: string;
   updated_by: { id: number; name: string } | null;
+  active_viewers: { id: number; name: string }[];
+}
+
+export interface WhiteboardSnapshotSummary {
+  id: number;
+  name: string;
+  created_at: string;
+  created_by: string;
 }
 
 export const getWhiteboard = (id: number) => api.get(`/api/groups/${id}/whiteboard/`).then(r => r.data as WhiteboardData);
 export const saveWhiteboard = (id: number, state: Record<string, unknown>) =>
   api.put(`/api/groups/${id}/whiteboard/`, { state }).then(r => r.data as { updated_at: string });
+
+export const getSnapshots = (id: number) =>
+  api.get(`/api/groups/${id}/whiteboard/snapshots/`).then(r => r.data as WhiteboardSnapshotSummary[]);
+export const saveSnapshot = (id: number, name: string, state: Record<string, unknown>) =>
+  api.post(`/api/groups/${id}/whiteboard/snapshots/`, { name, state }).then(r => r.data as WhiteboardSnapshotSummary);
+export const deleteSnapshot = (id: number, snapId: number) =>
+  api.delete(`/api/groups/${id}/whiteboard/snapshots/${snapId}/`);
+export const restoreSnapshot = (id: number, snapId: number) =>
+  api.post(`/api/groups/${id}/whiteboard/snapshots/${snapId}/restore/`).then(r => r.data as { state: Record<string, unknown>; updated_at: string });

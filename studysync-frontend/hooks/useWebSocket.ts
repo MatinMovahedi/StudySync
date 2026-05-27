@@ -13,7 +13,8 @@ export function useWebSocket(url: string | null, { onMessage, enabled = true, ma
   const ws = useRef<WebSocket | null>(null);
   const onMessageRef = useRef(onMessage);
   const retriesRef = useRef(0);
-  const [isFallback, setIsFallback] = useState(false);
+  // If no URL is provided, skip WebSocket entirely and go straight to polling fallback
+  const [isFallback, setIsFallback] = useState(!url);
   onMessageRef.current = onMessage;
 
   const connect = useCallback(() => {

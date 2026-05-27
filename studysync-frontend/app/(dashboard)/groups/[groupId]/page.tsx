@@ -42,8 +42,9 @@ export default function GroupDetailPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+
+        {/* Header card */}
         <motion.div variants={staggerItem}>
           <GlassCard className="mb-6 overflow-hidden p-0">
             <div className="h-2 w-full" style={{ background: group.avatar_color }} />
@@ -63,36 +64,23 @@ export default function GroupDetailPage() {
                 </div>
                 {group.description && <p className="text-sm text-text-secondary mt-2">{group.description}</p>}
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex-shrink-0">
                 {group.is_member ? (
-                  <>
-                    <Link href={`/groups/${group.id}/chat`}>
-                      <Button className="gap-2">
-                        <MessageSquare className="w-4 h-4" />
-                        Open chat
-                      </Button>
-                    </Link>
-                    <Link href={`/groups/${group.id}/whiteboard`}>
-                      <Button variant="secondary" className="gap-2">
-                        <PenLine className="w-4 h-4" />
-                        Whiteboard
-                      </Button>
-                    </Link>
-                    {group.user_role !== 'admin' && (
-                      confirmLeave ? (
-                        <div className="flex items-center gap-2">
-                          <Button variant="secondary" size="sm" onClick={() => setConfirmLeave(false)}>Cancel</Button>
-                          <Button variant="danger" size="sm" onClick={() => leaveMut.mutate()} loading={leaveMut.isPending}>
-                            Confirm leave
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button variant="danger" size="sm" onClick={() => setConfirmLeave(true)}>
-                          <UserMinus className="w-4 h-4" />
+                  group.user_role !== 'admin' && (
+                    confirmLeave ? (
+                      <div className="flex items-center gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => setConfirmLeave(false)}>Cancel</Button>
+                        <Button variant="danger" size="sm" onClick={() => leaveMut.mutate()} loading={leaveMut.isPending}>
+                          Confirm leave
                         </Button>
-                      )
-                    )}
-                  </>
+                      </div>
+                    ) : (
+                      <Button variant="danger" size="sm" onClick={() => setConfirmLeave(true)}>
+                        <UserMinus className="w-4 h-4" />
+                        Leave
+                      </Button>
+                    )
+                  )
                 ) : (
                   <Button onClick={() => joinMut.mutate()} loading={joinMut.isPending}>Join group</Button>
                 )}
@@ -100,6 +88,43 @@ export default function GroupDetailPage() {
             </div>
           </GlassCard>
         </motion.div>
+
+        {/* Feature cards — only shown to members */}
+        {group.is_member && (
+          <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <Link href={`/groups/${group.id}/chat`} className="group block">
+              <div className="border border-surface-border rounded-md p-5 bg-surface-card hover:bg-surface-elevated hover:border-brand/30 transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center">
+                    <MessageSquare className="w-4.5 h-4.5 text-brand" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-text-primary">Group Chat</div>
+                    <div className="text-xs text-text-muted">Real-time messaging</div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-text-muted ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-xs text-text-muted">Send messages, share links, and coordinate with your group members.</p>
+              </div>
+            </Link>
+
+            <Link href={`/groups/${group.id}/whiteboard`} className="group block">
+              <div className="border border-surface-border rounded-md p-5 bg-surface-card hover:bg-surface-elevated hover:border-brand/30 transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-md bg-violet-500/10 flex items-center justify-center">
+                    <PenLine className="w-4.5 h-4.5 text-violet-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-text-primary">Whiteboard</div>
+                    <div className="text-xs text-text-muted">Live collaboration</div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-text-muted ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-xs text-text-muted">Draw diagrams, brainstorm, and sketch ideas together in real time.</p>
+              </div>
+            </Link>
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Members */}

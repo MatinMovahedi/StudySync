@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import generics, status
 from .models import AIConversation, FlashCard, StudyPlan
 from .serializers import AIConversationSerializer, FlashCardSerializer, StudyPlanSerializer
-from .openai_client import chat_completion_stream, generate_quiz, generate_flashcards, summarize_notes, explain_concept, generate_study_plan
+from .openai_client import chat_completion_stream, generate_quiz, generate_flashcards, summarize_notes, explain_concept, generate_study_plan, generate_diagram
 
 
 class AIChatStreamView(APIView):
@@ -98,6 +98,15 @@ class ConversationListView(generics.ListAPIView):
 
     def get_queryset(self):
         return AIConversation.objects.filter(user=self.request.user)
+
+
+class DiagramView(APIView):
+    def post(self, request):
+        prompt = request.data.get('prompt', '').strip()
+        if not prompt:
+            return Response({'error': 'prompt required'}, status=400)
+        result = generate_diagram(prompt)
+        return Response(result)
 
 
 class StudyPlannerView(APIView):

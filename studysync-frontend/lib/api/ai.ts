@@ -1,5 +1,8 @@
 import api from './client';
 
+export const generateDiagram = (prompt: string): Promise<{ type: string; nodes: { id: string; label: string; parent: string | null }[] }> =>
+  api.post('/api/ai/diagram/', { prompt }).then(r => r.data);
+
 export const generateQuiz = (topic: string, difficulty: string, count: number) =>
   api.post('/api/ai/quiz/', { topic, difficulty, count }).then(r => r.data);
 

@@ -10,4 +10,5 @@ urlpatterns = [
     path('explain/', views.ExplainView.as_view(), name='ai-explain'),
     path('conversations/', views.ConversationListView.as_view(), name='ai-conversations'),
     path('planner/', views.StudyPlannerView.as_view(), name='ai-planner'),
+    path('diagram/', views.DiagramView.as_view(), name='ai-diagram'),
 ]

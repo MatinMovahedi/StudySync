@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Shield, User, Palette, LogOut, Trash2, ChevronRight, Eye, EyeOff, Mail, QrCode, CheckCircle, X } from 'lucide-react';
+import { Bell, Shield, User, Palette, LogOut, Trash2, ChevronRight, Eye, EyeOff, Mail, QrCode, CheckCircle, X, CreditCard, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
@@ -346,6 +347,56 @@ export default function SettingsPage() {
                   <Button type="button" size="sm" onClick={() => setShow2FASetup(true)}>
                     Enable 2FA
                   </Button>
+                )}
+              </div>
+            </GlassCard>
+          </motion.div>
+
+          {/* Plan & Billing */}
+          <motion.div variants={staggerItem}>
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="w-4 h-4 text-text-muted" />
+              <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">Plan &amp; Billing</h2>
+            </div>
+            <GlassCard hover={false} className="p-0 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
+                    user?.profile?.plan === 'pro'
+                      ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                      : user?.profile?.plan === 'team'
+                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                      : 'bg-surface-elevated text-text-muted border border-surface-border'
+                  }`}>
+                    {user?.profile?.plan ?? 'free'}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-text-primary capitalize">
+                      {user?.profile?.plan === 'pro'
+                        ? 'Pro Plan'
+                        : user?.profile?.plan === 'team'
+                        ? 'Team Plan'
+                        : 'Free Plan'}
+                    </div>
+                    <div className="text-xs text-text-muted mt-0.5">
+                      {user?.profile?.plan === 'pro'
+                        ? 'Unlimited AI, 50 members/group, priority support'
+                        : user?.profile?.plan === 'team'
+                        ? 'Unlimited AI, 100 members/group, custom AI personas'
+                        : '10 AI messages/month · 3 study groups · 20 members/group'}
+                    </div>
+                  </div>
+                </div>
+                {user?.profile?.plan !== 'team' && (
+                  <Link href="/pricing">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 px-3 py-1.5 rounded-md"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {user?.profile?.plan === 'free' ? 'Upgrade Plan' : 'View Plans'}
+                    </button>
+                  </Link>
                 )}
               </div>
             </GlassCard>

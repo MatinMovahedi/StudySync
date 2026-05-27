@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from .models import StudyGroup, GroupMembership, Whiteboard
+from .models import StudyGroup, GroupMembership, Whiteboard, WhiteboardSnapshot
 from .serializers import StudyGroupSerializer, StudyGroupCreateSerializer, GroupMembershipSerializer
 from .filters import StudyGroupFilter
 
@@ -79,9 +79,20 @@ class GroupMembersView(generics.ListAPIView):
 
 
 class WhiteboardView(APIView):
+    def _track_viewer(self, wb, user):
+        from django.utils import timezone
+        now = timezone.now().isoformat()
+        viewers = [v for v in (wb.active_viewers or [])
+                   if v.get('id') != user.id and
+                   (timezone.now() - timezone.datetime.fromisoformat(v['last_seen'].replace('Z', '+00:00'))).seconds < 30]
+        viewers.append({'id': user.id, 'name': f"{user.first_name} {user.last_name}".strip() or user.email, 'last_seen': now})
+        wb.active_viewers = viewers
+
     def get(self, request, pk):
         group = get_object_or_404(StudyGroup, pk=pk)
         wb, _ = Whiteboard.objects.get_or_create(group=group)
+        self._track_viewer(wb, request.user)
+        wb.save(update_fields=['active_viewers'])
         editor = None
         if wb.updated_by:
             editor = {'id': wb.updated_by.id, 'name': f"{wb.updated_by.first_name} {wb.updated_by.last_name}".strip()}
@@ -89,6 +100,7 @@ class WhiteboardView(APIView):
             'state': wb.state,
             'updated_at': wb.updated_at.isoformat(),
             'updated_by': editor,
+            'active_viewers': wb.active_viewers,
         })
 
     def put(self, request, pk):
@@ -98,5 +110,46 @@ class WhiteboardView(APIView):
         wb, _ = Whiteboard.objects.get_or_create(group=group)
         wb.state = request.data.get('state', {})
         wb.updated_by = request.user
+        self._track_viewer(wb, request.user)
         wb.save()
         return Response({'updated_at': wb.updated_at.isoformat()})
+
+
+class WhiteboardSnapshotView(APIView):
+    def _get_wb(self, pk):
+        group = get_object_or_404(StudyGroup, pk=pk)
+        wb, _ = Whiteboard.objects.get_or_create(group=group)
+        return wb
+
+    def get(self, request, pk):
+        wb = self._get_wb(pk)
+        snaps = wb.snapshots.select_related('created_by').all()[:20]
+        return Response([{
+            'id': s.id, 'name': s.name,
+            'created_at': s.created_at.isoformat(),
+            'created_by': f"{s.created_by.first_name} {s.created_by.last_name}".strip() if s.created_by else '',
+        } for s in snaps])
+
+    def post(self, request, pk):
+        wb = self._get_wb(pk)
+        name = request.data.get('name', '').strip()
+        state = request.data.get('state')
+        if not name or not state:
+            return Response({'error': 'name and state required'}, status=400)
+        snap = WhiteboardSnapshot.objects.create(whiteboard=wb, name=name, state=state, created_by=request.user)
+        return Response({'id': snap.id, 'name': snap.name, 'created_at': snap.created_at.isoformat()}, status=201)
+
+
+class WhiteboardSnapshotDetailView(APIView):
+    def delete(self, request, pk, snap_id):
+        snap = get_object_or_404(WhiteboardSnapshot, id=snap_id, whiteboard__group_id=pk)
+        snap.delete()
+        return Response(status=204)
+
+    def post(self, request, pk, snap_id):
+        snap = get_object_or_404(WhiteboardSnapshot, id=snap_id, whiteboard__group_id=pk)
+        wb = snap.whiteboard
+        wb.state = snap.state
+        wb.updated_by = request.user
+        wb.save()
+        return Response({'state': snap.state, 'updated_at': wb.updated_at.isoformat()})

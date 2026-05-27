@@ -51,6 +51,9 @@ class UserProfile(models.Model):
     skills   = models.JSONField(default=list, blank=True)
     projects = models.JSONField(default=list, blank=True)
     linkedin = models.CharField(max_length=100, blank=True, default='')
+    # Plan / membership
+    PLAN_CHOICES = [('free', 'Free'), ('pro', 'Pro'), ('team', 'Team')]
+    plan = models.CharField(max_length=10, choices=PLAN_CHOICES, default='free')
     # Preferences
     email_digest_enabled = models.BooleanField(default=True)
     # 2FA

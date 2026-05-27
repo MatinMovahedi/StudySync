@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Brain, User, Settings, BarChart3, Timer,
   ChevronLeft, ChevronRight, LogOut, MapPin, Headphones, Trophy, Hash,
-  CalendarDays, BookOpen, Library, GraduationCap, CalendarCheck
+  CalendarDays, BookOpen, Library, GraduationCap, CalendarCheck, Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUIStore } from '../../lib/store/uiStore';
@@ -118,6 +118,28 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Upgrade nudge — free users only */}
+      <AnimatePresence>
+        {!sidebarCollapsed && user?.profile?.plan === 'free' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="px-2 pb-2"
+          >
+            <Link href="/pricing">
+              <div className="rounded-md border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 transition-colors px-3 py-2.5 cursor-pointer">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Sparkles className="w-3 h-3 text-violet-400" />
+                  <p className="text-xs font-semibold text-violet-400">Upgrade to Pro</p>
+                </div>
+                <p className="text-[10px] text-text-muted">Unlimited AI &amp; groups</p>
+              </div>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* XP Bar */}
       <div className="border-t border-surface-border">

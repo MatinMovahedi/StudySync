@@ -173,7 +173,7 @@ function GroupsContent() {
                   {group.category.replace('_', ' ')}
                 </Badge>
                 {group.is_member ? (
-                  <Link href={`/groups/${group.id}/chat`}>
+                  <Link href={`/groups/${group.id}`}>
                     <Button variant="ghost" size="sm" className="gap-1 h-7 px-2">
                       Open <ArrowRight className="w-3 h-3" />
                     </Button>

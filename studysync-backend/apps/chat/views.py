@@ -1,3 +1,4 @@
+import os
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -8,8 +9,18 @@ from .serializers import MessageSerializer
 from apps.groups.models import StudyGroup
 
 
+def _publish_ably(channel_name: str, event: str, data: dict):
+    api_key = os.environ.get('ABLY_API_KEY')
+    if not api_key:
+        return
+    try:
+        from ably import AblyRest
+        AblyRest(api_key).channels.get(channel_name).publish(event, data)
+    except Exception as e:
+        print(f"Ably publish error: {e}")
+
+
 class MessageListCreateView(generics.ListCreateAPIView):
-    """GET: message history. POST: REST fallback for sending when WebSocket unavailable."""
     serializer_class = MessageSerializer
 
     def get_queryset(self):
@@ -21,7 +32,32 @@ class MessageListCreateView(generics.ListCreateAPIView):
         group = get_object_or_404(StudyGroup, pk=self.kwargs['group_id'])
         if not group.members.filter(id=self.request.user.id).exists():
             raise PermissionDenied("You are not a member of this group.")
-        serializer.save(sender=self.request.user, group=group)
+        message = serializer.save(sender=self.request.user, group=group)
+        sender = message.sender
+        _publish_ably(
+            f'chat-{group.id}',
+            'message',
+            {
+                'id': message.id,
+                'content': message.content,
+                'message_type': message.message_type,
+                'reactions': message.reactions,
+                'timestamp': message.created_at.isoformat(),
+                'created_at': message.created_at.isoformat(),
+                'sender': {
+                    'id': sender.id,
+                    'username': sender.username,
+                    'first_name': sender.first_name,
+                    'last_name': sender.last_name,
+                    'avatar': sender.profile.avatar.url if hasattr(sender, 'profile') and sender.profile and sender.profile.avatar else None,
+                },
+                'group': group.id,
+                'file_url': '',
+                'file_name': '',
+                'reply_to': None,
+                'is_edited': False,
+            }
+        )
 
 
 class MessageReactView(APIView):

@@ -94,6 +94,45 @@ def generate_study_plan(goal: str, hours_per_day: int, courses: list) -> list:
     return json.loads(response.choices[0].message.content).get('plan', MOCK_STUDY_PLAN)
 
 
+MOCK_DIAGRAM = {
+    "type": "mind_map",
+    "nodes": [
+        {"id": "c", "label": "Main Topic", "parent": None},
+        {"id": "a", "label": "Key Concept 1", "parent": "c"},
+        {"id": "b", "label": "Key Concept 2", "parent": "c"},
+        {"id": "d", "label": "Key Concept 3", "parent": "c"},
+        {"id": "e", "label": "Key Concept 4", "parent": "c"},
+        {"id": "a1", "label": "Detail A", "parent": "a"},
+        {"id": "a2", "label": "Detail B", "parent": "a"},
+        {"id": "b1", "label": "Detail C", "parent": "b"},
+        {"id": "d1", "label": "Detail D", "parent": "d"},
+    ]
+}
+
+
+def generate_diagram(prompt: str) -> dict:
+    if settings.USE_MOCK_AI:
+        mock = dict(MOCK_DIAGRAM)
+        mock["nodes"] = [dict(n) for n in MOCK_DIAGRAM["nodes"]]
+        mock["nodes"][0]["label"] = prompt[:40] if prompt else "Main Topic"
+        return mock
+    from openai import OpenAI
+    import json
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    system = (
+        "You are a diagram generator. Given a topic, generate a mind map as JSON. "
+        "Return ONLY a JSON object with: type='mind_map', nodes=array of {id, label, parent} "
+        "where parent is null for the root node and the id of the parent for all other nodes. "
+        "Max 12 nodes. Keep labels short (2-4 words)."
+    )
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},
+    )
+    return json.loads(response.choices[0].message.content)
+
+
 def explain_concept(concept: str, level: str = 'intermediate') -> str:
     if settings.USE_MOCK_AI:
         return f"## {concept}\n\nThis is a fascinating topic! Let me explain it at the {level} level.\n\nThe core idea behind {concept} is that it provides a structured way to think about complex problems. At its heart, it's about understanding the relationships between components and how they interact.\n\n### Key Principles\n1. **Foundation** — Start with the basics and build up\n2. **Pattern Recognition** — Identify repeating structures\n3. **Application** — Connect theory to real-world scenarios\n\n### Why It Matters\nUnderstanding {concept} gives you mental tools that apply across many domains, making you a more versatile problem solver.\n\nWould you like me to dive deeper into any specific aspect?"

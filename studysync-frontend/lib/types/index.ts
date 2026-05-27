@@ -27,6 +27,7 @@ export interface UserProfile {
   total_sessions: number;
   email_digest_enabled: boolean;
   two_fa_enabled: boolean;
+  plan: 'free' | 'pro' | 'team';
 }
 
 export interface StudyGroup {
