@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Zap, Brain, Users, TrendingUp, BookOpen } from 'lucide-react';
+import { Brain, Users, TrendingUp, BookOpen } from 'lucide-react';
 
 const features = [
   { icon: Brain,       label: 'AI Study Planner',  desc: 'Generate personalized 7-day study schedules' },
@@ -33,8 +34,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="relative z-10 flex flex-col h-full px-12 py-10">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center gap-2.5 w-fit">
-            <div className="w-9 h-9 rounded-lg bg-brand flex items-center justify-center shadow-lg shadow-brand/40">
-              <Zap className="w-[18px] h-[18px] text-white" />
+            <div className="w-9 h-9 flex-shrink-0 overflow-hidden rounded-lg">
+              <Image src="/logo-icon.png" alt="StudySynch" width={72} height={72} className="w-full h-full object-cover object-top" priority />
             </div>
             <span className="text-base font-bold text-white tracking-tight">StudySynch</span>
           </Link>
@@ -99,8 +100,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Mobile-only logo */}
         <div className="lg:hidden w-full max-w-[380px] mb-10">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-brand flex items-center justify-center shadow-md shadow-brand/30">
-              <Zap className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded-md">
+              <Image src="/logo-icon.png" alt="StudySynch" width={64} height={64} className="w-full h-full object-cover object-top" />
             </div>
             <span className="font-bold text-text-primary">StudySynch</span>
           </Link>

@@ -72,7 +72,7 @@ export default function PomodoroPage() {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('StudySynch', {
           body: phase === 'work' ? '✅ Focus session complete! Time for a break.' : '🎯 Break over — back to work!',
-          icon: '/icon-192.png',
+          icon: '/logo-icon.png',
         });
       }
     }

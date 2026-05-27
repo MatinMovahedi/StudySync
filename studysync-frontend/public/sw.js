@@ -27,8 +27,8 @@ self.addEventListener('push', e => {
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/logo-icon.png',
+      badge: '/logo-icon.png',
       tag: data.tag || 'studysynch',
     })
   );

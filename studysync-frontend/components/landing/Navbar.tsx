@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-import { Menu, X, Zap } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import Image from 'next/image';
 
 const navLinks = [
   { href: '/#features', label: 'Features' },
@@ -33,8 +34,8 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
-            <Zap className="w-3.5 h-3.5 text-white" />
+          <div className="w-7 h-7 flex-shrink-0 overflow-hidden rounded-md">
+            <Image src="/logo-icon.png" alt="StudySynch" width={56} height={56} className="w-full h-full object-cover object-top" priority />
           </div>
           <span className="text-sm font-semibold text-text-primary">StudySynch</span>
         </Link>

@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Brain, User, Settings, BarChart3, Timer,
-  Zap, ChevronLeft, ChevronRight, LogOut, MapPin, Headphones, Trophy, Hash,
+  ChevronLeft, ChevronRight, LogOut, MapPin, Headphones, Trophy, Hash,
   CalendarDays, BookOpen, Library, GraduationCap, CalendarCheck
 } from 'lucide-react';
+import Image from 'next/image';
 import { useUIStore } from '../../lib/store/uiStore';
 import { useAuthStore } from '../../lib/store/authStore';
 import { Avatar } from '../ui/avatar';
@@ -54,9 +55,16 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-surface-border flex-shrink-0">
-        <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center flex-shrink-0">
-            <Zap className="w-3.5 h-3.5 text-white" />
+        <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden">
+          <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded-md">
+            <Image
+              src="/logo-icon.png"
+              alt="StudySynch"
+              width={80}
+              height={80}
+              className="w-full h-full object-cover object-top"
+              priority
+            />
           </div>
           <AnimatePresence>
             {!sidebarCollapsed && (
