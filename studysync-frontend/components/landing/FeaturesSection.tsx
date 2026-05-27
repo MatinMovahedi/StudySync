@@ -1,56 +1,56 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Users, Brain, MessageSquare, BarChart3, Timer, Zap } from 'lucide-react';
+import { Users, Brain, BookOpen, BarChart3, Timer, Map } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../lib/utils/animations';
 
 const features = [
   {
     icon: Brain,
     title: 'AI that teaches, not just answers',
-    description: 'Generate quizzes from your notes, get concept breakdowns, flip through AI-made flashcards, and summarize any reading in seconds.',
+    description: 'Streaming AI chat, personalized 7-day study planners, quiz generation from your notes, concept breakdowns, and AI-made flashcards — all in one place.',
     colorClass: 'text-brand',
     bgClass: 'bg-brand/10',
-    badge: 'Quiz · Flashcards · Explain',
+    badge: 'Planner · Quiz · Flashcards',
   },
   {
     icon: Users,
-    title: 'Study groups that actually match',
-    description: 'Join or create groups by course, study style, and schedule. Shared goals lead to better outcomes — every time.',
+    title: 'Groups, communities & real-time chat',
+    description: 'Match with classmates by course and study style. Chat in dedicated group channels, follow peers, and engage in campus-wide communities.',
     colorClass: 'text-purple-400',
     bgClass: 'bg-purple-400/10',
-    badge: '3× better outcomes',
+    badge: 'Groups · Communities · Chat',
   },
   {
-    icon: MessageSquare,
-    title: 'Real-time chat built for focus',
-    description: 'Channels per group, typing indicators, and zero noise. Everything stays on topic because your time matters.',
+    icon: BookOpen,
+    title: 'Grade Tracker with GPA calculator',
+    description: 'Add courses, log every assignment, quiz, midterm and final. Weighted averages update instantly and your cumulative 4.0 GPA is always visible.',
     colorClass: 'text-cyan-400',
     bgClass: 'bg-cyan-400/10',
-    badge: 'WebSocket · <50ms',
+    badge: 'Weighted GPA · Color-coded',
   },
   {
     icon: BarChart3,
-    title: 'See exactly where your time goes',
-    description: 'Daily study hours, streak calendars, subject breakdowns. Know which habits move the needle.',
+    title: 'Analytics, streaks & gamification',
+    description: 'Daily study hours, streak calendars, subject breakdowns, XP points, and a leaderboard that makes consistency contagious.',
     colorClass: 'text-amber-400',
     bgClass: 'bg-amber-400/10',
-    badge: 'Streaks · Analytics',
+    badge: 'Streaks · XP · Leaderboard',
   },
   {
     icon: Timer,
-    title: 'Built-in Pomodoro that logs itself',
-    description: 'Start a focus session, work through breaks, and watch your stats update automatically. No manual tracking.',
+    title: 'Pomodoro with sounds & notifications',
+    description: 'Start a focus session with one tap. Audio cues at the end of every work block and break, browser push notifications, and automatic session logging.',
     colorClass: 'text-rose-400',
     bgClass: 'bg-rose-400/10',
-    badge: '25/5 min cycles',
+    badge: 'Focus · Sounds · PWA',
   },
   {
-    icon: Zap,
-    title: 'One platform. No tab switching.',
-    description: 'Groups, chat, AI, timers, analytics — all in the same interface. Stay in flow and get more done.',
+    icon: Map,
+    title: 'Campus resources & smart search',
+    description: 'Browse study spots on an interactive map, discover and share resources in the library, export your schedule as .ics, and search everything from the top bar.',
     colorClass: 'text-brand',
     bgClass: 'bg-brand/10',
-    badge: 'All-in-one',
+    badge: 'Map · Library · .ics Export',
   },
 ];
 

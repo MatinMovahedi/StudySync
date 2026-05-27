@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import { Brain, Hash, Flame, Users, ChevronDown, Sparkles, Timer, BarChart3 } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '../ui/button';
 
 const STATS = [
@@ -166,7 +167,7 @@ export function HeroSection() {
                 <div className="w-3 h-3 rounded-full bg-surface-border" />
               </div>
               <div className="flex-1 bg-surface rounded border border-surface-border px-3 py-1 text-[11px] text-text-muted text-center max-w-xs mx-auto">
-                app.studysynch.org/groups/cs401/chat
+                studysynch.org/groups/cs401/chat
               </div>
             </div>
 
@@ -174,8 +175,8 @@ export function HeroSection() {
             <div className="bg-surface-card flex h-[340px]">
               {/* Mini sidebar */}
               <div className="w-12 bg-surface border-r border-surface-border flex flex-col items-center py-4 gap-3 flex-shrink-0">
-                <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center mb-2">
-                  <span className="text-white text-xs font-bold">S</span>
+                <div className="w-7 h-7 rounded-md overflow-hidden mb-2 flex-shrink-0">
+                  <Image src="/logo-icon.png" alt="StudySynch" width={28} height={28} className="w-full h-full object-cover object-top" />
                 </div>
                 {[Brain, Users, Flame, BarChart3].map((Icon, i) => (
                   <div key={i} className={`w-7 h-7 rounded-md flex items-center justify-center ${i === 1 ? 'bg-brand/10' : ''}`}>

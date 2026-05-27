@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Zap } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '../ui/button';
 
 export function CTASection() {
@@ -15,7 +15,9 @@ export function CTASection() {
         transition={{ duration: 0.5 }}
       >
         <div className="inline-flex items-center gap-2 border border-surface-border rounded-md px-3 py-1.5 mb-8">
-          <Zap className="w-3.5 h-3.5 text-brand" />
+          <div className="w-5 h-5 overflow-hidden rounded flex-shrink-0">
+            <Image src="/logo-icon.png" alt="StudySynch" width={20} height={20} className="w-full h-full object-cover object-top" />
+          </div>
           <span className="text-sm text-text-secondary">Free forever for students</span>
         </div>
         <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-5 leading-tight tracking-tight">
