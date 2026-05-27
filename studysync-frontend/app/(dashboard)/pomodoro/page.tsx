@@ -1,10 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Coffee, Zap } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Zap, Volume2, VolumeX } from 'lucide-react';
 import { usePomodoro } from '../../../hooks/usePomodoro';
 import { GlassCard } from '../../../components/shared/GlassCard';
-import { Button } from '../../../components/ui/button';
 import { staggerContainer, staggerItem } from '../../../lib/utils/animations';
 
 const PHASE_LABELS = { work: 'Focus', short_break: 'Short Break', long_break: 'Long Break' };
@@ -28,17 +27,65 @@ function CircularTimer({ progress, phase }: { progress: number; phase: string })
   );
 }
 
+function playTone(freq: number, duration: number, gain = 0.3) {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    g.gain.setValueAtTime(gain, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch {}
+}
+
+function playSessionEnd() {
+  playTone(523, 0.15);
+  setTimeout(() => playTone(659, 0.15), 160);
+  setTimeout(() => playTone(784, 0.4), 320);
+}
+
+function playBreakEnd() {
+  playTone(784, 0.15);
+  setTimeout(() => playTone(659, 0.15), 160);
+  setTimeout(() => playTone(523, 0.4), 320);
+}
+
 export default function PomodoroPage() {
   const { phase, secondsLeft, isRunning, sessionCount, workDuration, subject, start, pause, resume, reset, progress, setSubject, setPhase } = usePomodoro();
   const [subjectInput, setSubjectInput] = useState(subject);
+  const [muted, setMuted] = useState(false);
 
   useEffect(() => { document.title = `${Math.floor(secondsLeft/60)}:${String(secondsLeft%60).padStart(2,'0')} — ${PHASE_LABELS[phase as keyof typeof PHASE_LABELS]} · StudySynch`; }, [secondsLeft, phase]);
+
+  // Play sound + browser notification when timer hits 0
+  useEffect(() => {
+    if (secondsLeft === 0 && isRunning) {
+      if (!muted) {
+        if (phase === 'work') playSessionEnd();
+        else playBreakEnd();
+      }
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('StudySynch', {
+          body: phase === 'work' ? '✅ Focus session complete! Time for a break.' : '🎯 Break over — back to work!',
+          icon: '/icon-192.png',
+        });
+      }
+    }
+  }, [secondsLeft, isRunning, phase, muted]);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
   const color = PHASE_COLORS[phase as keyof typeof PHASE_COLORS];
 
   const handleStart = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     setSubject(subjectInput);
     start(subjectInput);
   };
@@ -105,7 +152,7 @@ export default function PomodoroPage() {
         )}
 
         {/* Controls */}
-        <motion.div variants={staggerItem} className="flex justify-center gap-3 mb-8">
+        <motion.div variants={staggerItem} className="flex justify-center items-center gap-3 mb-8">
           <button
             type="button"
             onClick={reset}
@@ -120,6 +167,14 @@ export default function PomodoroPage() {
             style={{ background: color }}
           >
             {isRunning ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
+          </button>
+          <button
+            type="button"
+            aria-label={muted ? 'Unmute' : 'Mute'}
+            onClick={() => setMuted(m => !m)}
+            className="w-12 h-12 rounded-md bg-surface-card border border-surface-border flex items-center justify-center text-text-muted hover:text-text-secondary hover:bg-surface-elevated transition-colors"
+          >
+            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
         </motion.div>
 

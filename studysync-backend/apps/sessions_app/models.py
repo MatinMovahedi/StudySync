@@ -13,6 +13,8 @@ class StudySession(models.Model):
     is_online = models.BooleanField(default=True)
     join_link = models.URLField(blank=True, default='')
     max_participants = models.PositiveSmallIntegerField(default=10)
+    is_recurring   = models.BooleanField(default=False)
+    recurrence_day = models.SmallIntegerField(null=True, blank=True)  # 0=Mon…6=Sun
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -1,12 +1,16 @@
 'use client';
+import dynamic from 'next/dynamic';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Users, Clock, Wifi, Coffee, Monitor } from 'lucide-react';
+import { MapPin, Users, Clock, Wifi, Coffee, Monitor, List, Map } from 'lucide-react';
 import { getSpots } from '../../../lib/api/campus';
 import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { staggerContainer, staggerItem } from '../../../lib/utils/animations';
 import { StudySpot } from '../../../lib/types';
+
+const SpotMap = dynamic(() => import('../../../components/shared/SpotMap'), { ssr: false, loading: () => <div className="h-96 rounded-md bg-surface-elevated animate-pulse" /> });
 
 const AMENITY_ICONS: Record<string, typeof Wifi> = {
   wifi: Wifi,
@@ -31,14 +35,40 @@ function StarRating({ rating }: { rating: number }) {
 export default function SpotsPage() {
   const { data: spots, isLoading } = useQuery({ queryKey: ['spots'], queryFn: getSpots });
   const list: StudySpot[] = spots ?? [];
+  const [view, setView] = useState<'list' | 'map'>('list');
+  const mappable = list.filter(s => s.latitude != null && s.longitude != null);
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.div variants={staggerItem} className="mb-7">
-          <p className="text-xs text-text-muted mb-1">Campus</p>
-          <h1 className="text-2xl font-semibold text-text-primary">Study Spots</h1>
-          <p className="text-text-muted text-xs mt-1">Find the perfect place to focus on campus</p>
+        <motion.div variants={staggerItem} className="flex items-center justify-between mb-7">
+          <div>
+            <p className="text-xs text-text-muted mb-1">Campus</p>
+            <h1 className="text-2xl font-semibold text-text-primary">Study Spots</h1>
+            <p className="text-text-muted text-xs mt-1">Find the perfect place to focus on campus</p>
+          </div>
+
+          {!isLoading && list.length > 0 && (
+            <div className="flex items-center border border-surface-border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setView('list')}
+                className={`flex items-center gap-1.5 px-3 h-8 text-xs font-medium transition-colors ${view === 'list' ? 'bg-brand text-white' : 'text-text-muted hover:text-text-secondary hover:bg-surface-elevated'}`}
+              >
+                <List className="w-3.5 h-3.5" />
+                List
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('map')}
+                disabled={mappable.length === 0}
+                className={`flex items-center gap-1.5 px-3 h-8 text-xs font-medium transition-colors disabled:opacity-40 ${view === 'map' ? 'bg-brand text-white' : 'text-text-muted hover:text-text-secondary hover:bg-surface-elevated'}`}
+              >
+                <Map className="w-3.5 h-3.5" />
+                Map
+              </button>
+            </div>
+          )}
         </motion.div>
 
         {isLoading ? (
@@ -50,6 +80,10 @@ export default function SpotsPage() {
             <MapPin className="w-6 h-6 text-text-muted mx-auto mb-2" />
             <p className="text-sm text-text-muted">No study spots listed yet</p>
           </div>
+        ) : view === 'map' ? (
+          <motion.div variants={staggerItem}>
+            <SpotMap spots={mappable} />
+          </motion.div>
         ) : (
           <motion.div
             className="border border-surface-border rounded-md overflow-hidden divide-y divide-surface-border"

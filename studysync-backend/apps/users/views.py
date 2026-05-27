@@ -9,7 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import get_user_model, authenticate
 from django.conf import settings
-from .models import UserProfile
+from django.shortcuts import get_object_or_404
+from .models import UserProfile, UserFollow
 from .serializers import UserSerializer, RegisterSerializer, UserProfileSerializer, OnboardingSerializer
 
 User = get_user_model()
@@ -186,3 +187,23 @@ class TwoFAVerifyView(APIView):
             'access': str(refresh.access_token),
             'refresh': str(refresh),
         })
+
+
+class FollowUserView(APIView):
+    def post(self, request, user_id):
+        if request.user.id == user_id:
+            return Response({'error': 'Cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        target = get_object_or_404(User, id=user_id)
+        follow, created = UserFollow.objects.get_or_create(follower=request.user, following=target)
+        if not created:
+            follow.delete()
+            return Response({'following': False})
+        return Response({'following': True})
+
+
+class FollowStatsView(APIView):
+    def get(self, request, user_id):
+        followers = UserFollow.objects.filter(following_id=user_id).count()
+        following = UserFollow.objects.filter(follower_id=user_id).count()
+        is_following = UserFollow.objects.filter(follower=request.user, following_id=user_id).exists()
+        return Response({'followers': followers, 'following': following, 'is_following': is_following})

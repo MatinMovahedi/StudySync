@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { ChevronLeft, ChevronRight, Plus, X, Trash2, ExternalLink, MapPin, Link2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, ExternalLink, MapPin, Link2, Download, Repeat2 } from 'lucide-react';
 import { startOfWeek, addDays, addWeeks, subWeeks, format, isToday, isSameDay, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
 import { getSessions, createSession, deleteSession, type StudySession } from '../../../lib/api/sessions';
@@ -59,6 +59,7 @@ function layoutDay(sessions: StudySession[]): Placed[] {
 interface SessionForm {
   title: string; group: number; date: string; time: string;
   duration_minutes: number; is_online: boolean; join_link: string; location: string;
+  is_recurring: boolean;
 }
 
 // ── Session block ─────────────────────────────────────────────────────────────
@@ -158,9 +159,10 @@ export default function SchedulePage() {
   });
 
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<SessionForm>({
-    defaultValues: { duration_minutes: 60, is_online: true },
+    defaultValues: { duration_minutes: 60, is_online: true, is_recurring: false },
   });
   const isOnline = watch('is_online');
+  const isRecurring = watch('is_recurring');
 
   const openCreate = useCallback((dateTime?: Date) => {
     reset({ duration_minutes: 60, is_online: true });
@@ -179,15 +181,47 @@ export default function SchedulePage() {
   };
 
   const onSubmit = (data: SessionForm) => {
+    const dt = new Date(`${data.date}T${data.time}`);
     createMutation.mutate({
       title: data.title,
       group: Number(data.group),
-      scheduled_at: new Date(`${data.date}T${data.time}`).toISOString(),
+      scheduled_at: dt.toISOString(),
       duration_minutes: Number(data.duration_minutes),
       is_online: data.is_online,
       join_link: data.is_online ? (data.join_link || '') : '',
       location: data.is_online ? '' : (data.location || ''),
+      is_recurring: data.is_recurring,
+      recurrence_day: data.is_recurring ? dt.getDay() : null,
     });
+  };
+
+  const exportIcs = () => {
+    if (!sessions.length) return;
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace('.000', '');
+    const lines = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//StudySynch//EN', 'CALSCALE:GREGORIAN',
+      ...sessions.flatMap(s => {
+        const start = parseISO(s.scheduled_at);
+        const end = new Date(start.getTime() + s.duration_minutes * 60000);
+        return [
+          'BEGIN:VEVENT',
+          `UID:session-${s.id}@studysynch.org`,
+          `DTSTART:${fmt(start)}`,
+          `DTEND:${fmt(end)}`,
+          `SUMMARY:${s.title}`,
+          s.location ? `LOCATION:${s.location}` : '',
+          s.join_link ? `URL:${s.join_link}` : '',
+          'END:VEVENT',
+        ].filter(Boolean);
+      }),
+      'END:VCALENDAR',
+    ];
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `studysynch-${format(weekStart, 'yyyy-MM-dd')}.ics`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   const sessionsForDay = (day: Date) => sessions.filter(s => isSameDay(parseISO(s.scheduled_at), day));
@@ -234,14 +268,27 @@ export default function SchedulePage() {
           </button>
         </div>
 
-        <button
-          type="button"
-          aria-label="New session"
-          onClick={() => openCreate()}
-          className="w-7 h-7 rounded-md bg-brand/10 hover:bg-brand/20 text-brand flex items-center justify-center transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {sessions.length > 0 && (
+            <button
+              type="button"
+              aria-label="Export .ics"
+              onClick={exportIcs}
+              title="Export calendar"
+              className="w-7 h-7 rounded-md border border-surface-border hover:bg-surface-elevated text-text-muted hover:text-text-secondary flex items-center justify-center transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label="New session"
+            onClick={() => openCreate()}
+            className="w-7 h-7 rounded-md bg-brand/10 hover:bg-brand/20 text-brand flex items-center justify-center transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* ── Calendar ── */}
@@ -489,13 +536,26 @@ export default function SchedulePage() {
                   <span className="text-xs text-text-secondary">Online</span>
                   <button
                     type="button"
-                    role="switch"
-                    aria-checked={isOnline ? 'true' : 'false'}
                     aria-label="Toggle online session"
                     onClick={() => setValue('is_online', !isOnline)}
                     className={`relative w-8 h-4 rounded-full transition-colors ${isOnline ? 'bg-brand' : 'bg-surface-elevated border border-surface-border'}`}
                   >
                     <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${isOnline ? 'translate-x-4' : ''}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Repeat2 className="w-3.5 h-3.5 text-text-muted" />
+                    <span className="text-xs text-text-secondary">Repeat weekly</span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Toggle recurring session"
+                    onClick={() => setValue('is_recurring', !isRecurring)}
+                    className={`relative w-8 h-4 rounded-full transition-colors ${isRecurring ? 'bg-brand' : 'bg-surface-elevated border border-surface-border'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${isRecurring ? 'translate-x-4' : ''}`} />
                   </button>
                 </div>
 

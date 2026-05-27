@@ -2,13 +2,35 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, Plus, Trash2, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { getGrades, createGrade, updateGrade, deleteGrade, Assessment, CourseGrade } from '../../../lib/api/grades';
 import { GlassCard } from '../../../components/shared/GlassCard';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { staggerContainer, staggerItem, popIn } from '../../../lib/utils/animations';
 
 const ASSESSMENT_TYPES = ['assignment', 'quiz', 'midterm', 'final', 'project'] as const;
+
+function pctToGpa(pct: number): number {
+  if (pct >= 93) return 4.0;
+  if (pct >= 90) return 3.7;
+  if (pct >= 87) return 3.3;
+  if (pct >= 83) return 3.0;
+  if (pct >= 80) return 2.7;
+  if (pct >= 77) return 2.3;
+  if (pct >= 73) return 2.0;
+  if (pct >= 70) return 1.7;
+  if (pct >= 67) return 1.3;
+  if (pct >= 63) return 1.0;
+  if (pct >= 60) return 0.7;
+  return 0.0;
+}
+
+function calcOverallGpa(grades: CourseGrade[]): number | null {
+  const with_avg = grades.filter(g => g.weighted_average !== null);
+  if (!with_avg.length) return null;
+  const sum = with_avg.reduce((acc, g) => acc + pctToGpa(g.weighted_average!), 0);
+  return Math.round((sum / with_avg.length) * 100) / 100;
+}
 
 function gradeColor(avg: number | null) {
   if (avg === null) return 'text-text-muted';
@@ -181,6 +203,7 @@ export default function GradesPage() {
   });
 
   const grades: CourseGrade[] = data?.results ?? (Array.isArray(data) ? data : []);
+  const overallGpa = calcOverallGpa(grades);
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -203,6 +226,38 @@ export default function GradesPage() {
             Add Course
           </button>
         </motion.div>
+
+        {/* GPA Summary */}
+        {grades.length > 0 && overallGpa !== null && (
+          <motion.div variants={staggerItem} className="mb-6">
+            <GlassCard className="flex items-center gap-5 p-5" hover={false}>
+              <div className="p-3 rounded-xl bg-brand/10">
+                <TrendingUp className="w-6 h-6 text-brand" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-text-muted mb-1 font-medium uppercase tracking-widest">Overall GPA</p>
+                <div className="flex items-end gap-3">
+                  <span className={`text-4xl font-bold tabular-nums ${overallGpa >= 3.5 ? 'text-brand' : overallGpa >= 3.0 ? 'text-cyan-400' : overallGpa >= 2.0 ? 'text-amber-400' : 'text-rose-400'}`}>
+                    {overallGpa.toFixed(2)}
+                  </span>
+                  <span className="text-text-muted text-sm mb-1">/ 4.00</span>
+                </div>
+                <div className="mt-2 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
+                  <motion.div
+                    className={`h-full rounded-full ${overallGpa >= 3.5 ? 'bg-brand' : overallGpa >= 3.0 ? 'bg-cyan-400' : overallGpa >= 2.0 ? 'bg-amber-400' : 'bg-rose-400'}`}
+                    animate={{ width: `${(overallGpa / 4) * 100}%` }}
+                    initial={{ width: '0%' }}
+                    transition={{ duration: 0.9, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-2xl font-bold text-text-primary">{grades.filter(g => g.weighted_average !== null).length}</p>
+                <p className="text-xs text-text-muted">course{grades.length !== 1 ? 's' : ''}</p>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
 
         <AnimatePresence>
           {showAdd && (

@@ -11,4 +11,6 @@ urlpatterns = [
     path('2fa/setup/', views.TwoFASetupView.as_view(), name='2fa-setup'),
     path('2fa/enable/', views.TwoFAEnableView.as_view(), name='2fa-enable'),
     path('2fa/disable/', views.TwoFADisableView.as_view(), name='2fa-disable'),
+    path('<int:user_id>/follow/', views.FollowUserView.as_view(), name='follow-user'),
+    path('<int:user_id>/follow-stats/', views.FollowStatsView.as_view(), name='follow-stats'),
 ]

@@ -66,3 +66,13 @@ export async function verify2FA(tempToken: string, code: string) {
   localStorage.setItem('refresh_token', data.refresh);
   return data;
 }
+
+export async function followUser(userId: number): Promise<{ following: boolean }> {
+  const { data } = await api.post(`/api/users/${userId}/follow/`);
+  return data;
+}
+
+export async function getFollowStats(userId: number): Promise<{ followers: number; following: number; is_following: boolean }> {
+  const { data } = await api.get(`/api/users/${userId}/follow-stats/`);
+  return data;
+}

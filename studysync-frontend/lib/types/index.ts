@@ -134,6 +134,8 @@ export interface StudySpot {
   is_open_24h: boolean;
   hours: string;
   noise_level: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface GroupMembership {

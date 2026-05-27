@@ -1,21 +1,38 @@
 'use client';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { BookOpen, Clock, Calendar, Sparkles, Link2, Globe, ExternalLink, Code2 } from 'lucide-react';
-import { getUserById } from '../../../../lib/api/auth';
+import { BookOpen, Clock, Calendar, Sparkles, Link2, Globe, ExternalLink, Code2, UserPlus, UserCheck } from 'lucide-react';
+import { getUserById, followUser, getFollowStats } from '../../../../lib/api/auth';
 import { Avatar } from '../../../../components/ui/avatar';
 import { Badge } from '../../../../components/ui/badge';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import { staggerContainer, staggerItem } from '../../../../lib/utils/animations';
 import { User } from '../../../../lib/types';
+import { useAuthStore } from '../../../../lib/store/authStore';
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const { user: me } = useAuthStore();
+  const qc = useQueryClient();
+
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['user', userId],
     queryFn: () => getUserById(Number(userId)),
   });
+
+  const { data: followStats } = useQuery({
+    queryKey: ['follow-stats', userId],
+    queryFn: () => getFollowStats(Number(userId)),
+    enabled: !!userId,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => followUser(Number(userId)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['follow-stats', userId] }),
+  });
+
+  const isOwnProfile = me?.id === Number(userId);
 
   if (isLoading) {
     return (
@@ -74,6 +91,21 @@ export default function UserProfilePage() {
                     <Globe className="w-4 h-4" />
                   </a>
                 )}
+                {!isOwnProfile && (
+                  <button
+                    type="button"
+                    onClick={() => followMutation.mutate()}
+                    disabled={followMutation.isPending}
+                    className={`flex items-center gap-1.5 h-8 px-3 rounded-md border text-sm font-medium transition-colors disabled:opacity-50 ${
+                      followStats?.is_following
+                        ? 'border-brand/40 bg-brand/10 text-brand hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-400/40'
+                        : 'border-surface-border text-text-secondary hover:bg-surface-elevated'
+                    }`}
+                  >
+                    {followStats?.is_following ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                    {followStats?.is_following ? 'Following' : 'Follow'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -112,6 +144,14 @@ export default function UserProfilePage() {
                 <div className="text-base font-bold text-text-primary tabular-nums">{profile.total_sessions ?? 0}</div>
                 <div className="text-xs text-text-muted">Sessions</div>
               </div>
+            </div>
+            <div className="flex-1 px-4 py-3 text-center">
+              <div className="text-base font-bold text-text-primary tabular-nums">{followStats?.followers ?? 0}</div>
+              <div className="text-xs text-text-muted">Followers</div>
+            </div>
+            <div className="flex-1 px-4 py-3 text-center">
+              <div className="text-base font-bold text-text-primary tabular-nums">{followStats?.following ?? 0}</div>
+              <div className="text-xs text-text-muted">Following</div>
             </div>
           </motion.div>
         )}

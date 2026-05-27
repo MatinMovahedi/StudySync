@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from apps.users.views import LoginView, TwoFAVerifyView
+from apps.search_api import GlobalSearchView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,6 +30,7 @@ urlpatterns = [
     path('api/comments/', include('apps.communities.comment_urls')),
     path('api/resources/', include('apps.resources.urls')),
     path('api/tutoring/', include('apps.tutoring.urls')),
+    path('api/search/', GlobalSearchView.as_view(), name='global-search'),
 ]
 
 if settings.DEBUG:
