@@ -56,3 +56,16 @@ class GroupMembership(models.Model):
 
     def __str__(self):
         return f"{self.user.email} in {self.group.name}"
+
+
+class Whiteboard(models.Model):
+    group = models.OneToOneField(StudyGroup, on_delete=models.CASCADE, related_name='whiteboard')
+    state = models.JSONField(default=dict)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'whiteboards'
+
+    def __str__(self):
+        return f"Whiteboard for {self.group.name}"

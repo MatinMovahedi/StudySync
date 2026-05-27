@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.1",
     "@tanstack/react-query": "^5.100.13",
     "@types/leaflet": "^1.9.21",
     "axios": "^1.16.1",

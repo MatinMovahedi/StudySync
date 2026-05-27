@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count
-from .models import StudyGroup, GroupMembership
+from django.shortcuts import get_object_or_404
+from .models import StudyGroup, GroupMembership, Whiteboard
 from .serializers import StudyGroupSerializer, StudyGroupCreateSerializer, GroupMembershipSerializer
 from .filters import StudyGroupFilter
 
@@ -75,3 +76,27 @@ class GroupMembersView(generics.ListAPIView):
 
     def get_queryset(self):
         return GroupMembership.objects.filter(group_id=self.kwargs['pk']).select_related('user', 'user__profile')
+
+
+class WhiteboardView(APIView):
+    def get(self, request, pk):
+        group = get_object_or_404(StudyGroup, pk=pk)
+        wb, _ = Whiteboard.objects.get_or_create(group=group)
+        editor = None
+        if wb.updated_by:
+            editor = {'id': wb.updated_by.id, 'name': f"{wb.updated_by.first_name} {wb.updated_by.last_name}".strip()}
+        return Response({
+            'state': wb.state,
+            'updated_at': wb.updated_at.isoformat(),
+            'updated_by': editor,
+        })
+
+    def put(self, request, pk):
+        group = get_object_or_404(StudyGroup, pk=pk)
+        if not GroupMembership.objects.filter(user=request.user, group=group).exists():
+            return Response({'error': 'Must be a group member'}, status=403)
+        wb, _ = Whiteboard.objects.get_or_create(group=group)
+        wb.state = request.data.get('state', {})
+        wb.updated_by = request.user
+        wb.save()
+        return Response({'updated_at': wb.updated_at.isoformat()})

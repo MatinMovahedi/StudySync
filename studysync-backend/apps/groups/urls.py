@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:pk>/join/', views.JoinGroupView.as_view(), name='group-join'),
     path('<int:pk>/leave/', views.LeaveGroupView.as_view(), name='group-leave'),
     path('<int:pk>/members/', views.GroupMembersView.as_view(), name='group-members'),
+    path('<int:pk>/whiteboard/', views.WhiteboardView.as_view(), name='whiteboard'),
 ]

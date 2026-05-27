@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Users, MessageSquare, Calendar, Lock, ArrowRight, UserMinus } from 'lucide-react';
+import { Users, MessageSquare, Calendar, Lock, ArrowRight, UserMinus, PenLine } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { getGroup, getGroupMembers, joinGroup, leaveGroup } from '../../../../lib/api/groups';
@@ -70,6 +70,12 @@ export default function GroupDetailPage() {
                       <Button className="gap-2">
                         <MessageSquare className="w-4 h-4" />
                         Open chat
+                      </Button>
+                    </Link>
+                    <Link href={`/groups/${group.id}/whiteboard`}>
+                      <Button variant="secondary" className="gap-2">
+                        <PenLine className="w-4 h-4" />
+                        Whiteboard
                       </Button>
                     </Link>
                     {group.user_role !== 'admin' && (

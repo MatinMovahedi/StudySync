@@ -25,3 +25,13 @@ export const createGroup = (data: Record<string, unknown>) => api.post('/api/gro
 export const joinGroup = (id: number) => api.post(`/api/groups/${id}/join/`).then(r => r.data);
 export const leaveGroup = (id: number) => api.post(`/api/groups/${id}/leave/`).then(r => r.data);
 export const getGroupMembers = (id: number) => api.get(`/api/groups/${id}/members/`).then(r => unwrapList<GroupMember>(r));
+
+export interface WhiteboardData {
+  state: Record<string, unknown>;
+  updated_at: string;
+  updated_by: { id: number; name: string } | null;
+}
+
+export const getWhiteboard = (id: number) => api.get(`/api/groups/${id}/whiteboard/`).then(r => r.data as WhiteboardData);
+export const saveWhiteboard = (id: number, state: Record<string, unknown>) =>
+  api.put(`/api/groups/${id}/whiteboard/`, { state }).then(r => r.data as { updated_at: string });
