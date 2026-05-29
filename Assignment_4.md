@@ -154,7 +154,9 @@ classDiagram
         +String category
         +List tags
         +int upvotes
+        +boolean is_saved
         +toggleUpvote(user) void
+        +toggleSave(user) void
     }
 
     class TutorListing {
@@ -433,18 +435,18 @@ StudySync follows a **three-tier client-server architecture** with a clear separ
 │   │  ...      │  │  ...         │  │                          │   │
 │   └───────────┘  └──────────────┘  └──────────────────────────┘   │
 └──────────────────────────┬──────────────────────────────────────────┘
-                           │ HTTPS (REST) + WSS (WebSocket)
+                           │ HTTPS (REST)
 ┌──────────────────────────▼──────────────────────────────────────────┐
 │                       APPLICATION TIER                              │
 │                                                                     │
-│   Django 6 + DRF + Django Channels   Deployed on Vercel Serverless │
+│   Django 6 + DRF                     Deployed on Vercel Serverless │
 │   ┌────────────────┐  ┌────────────────┐  ┌─────────────────────┐ │
-│   │  REST API      │  │  WebSocket     │  │  Business Logic     │ │
-│   │  (WSGI via     │  │  Consumers     │  │  apps/users/        │ │
-│   │  daphne/ASGI)  │  │  (Django       │  │  apps/groups/       │ │
-│   │                │  │  Channels)     │  │  apps/analytics/    │ │
-│   │  JWT Auth      │  │  chat/         │  │  apps/ai_assistant/ │ │
-│   │  CORS Headers  │  │  notifications/│  │  apps/tutoring/     │ │
+│   │  REST API      │  │  Ably Publish  │  │  Business Logic     │ │
+│   │  (WSGI via     │  │  (root key)    │  │  apps/users/        │ │
+│   │  ASGI adapter) │  │  chat events   │  │  apps/groups/       │ │
+│   │                │  │  focus events  │  │  apps/analytics/    │ │
+│   │  JWT Auth      │  │  reactions     │  │  apps/ai_assistant/ │ │
+│   │  CORS Headers  │  │                │  │  apps/tutoring/     │ │
 │   └────────────────┘  └────────────────┘  └─────────────────────┘ │
 │                                │                                    │
 │   External Services:     OpenAI GPT API (AI assistant + planner)   │
@@ -468,7 +470,7 @@ StudySync follows a **three-tier client-server architecture** with a clear separ
 |----------|--------|-----------|
 | Frontend framework | Next.js App Router | File-based routing, server/client component split, Vercel-native deployment |
 | API style | REST + JWT | Stateless, easy to cache, compatible with Vercel serverless |
-| Real-time | Django Channels (WebSocket) | Integrates natively with Django ORM; no separate service needed for chat |
+| Real-time | Ably Pub/Sub | Managed Pub/Sub that works within Vercel's serverless constraint; backend publishes via root key, browser subscribes via subscribe-only key |
 | Auth | JWT (simplejwt) | Stateless tokens; no server-side session storage required |
 | State | Zustand (client) + React Query (server) | Zustand for UI/auth state; React Query for server data with automatic caching and refetching |
 | ORM | Django ORM | Reduces boilerplate; migrations auto-tracked |
@@ -619,6 +621,12 @@ erDiagram
         int upvotes
     }
 
+    RESOURCE_SAVE {
+        int id PK
+        int resource_id FK
+        int user_id FK
+    }
+
     TUTOR_LISTING {
         int id PK
         int tutor_id FK
@@ -685,6 +693,8 @@ erDiagram
     USER ||--o{ STUDY_PLAN : "generates"
     USER ||--o{ COURSE_GRADE : "tracks"
     USER ||--o{ RESOURCE : "creates"
+    USER ||--o{ RESOURCE_SAVE : "bookmarks"
+    RESOURCE ||--o{ RESOURCE_SAVE : "bookmarked via"
     USER ||--o{ POST : "authors"
     USER ||--o{ MESSAGE : "sends"
     USER ||--o| TUTOR_LISTING : "offers"
@@ -810,7 +820,7 @@ erDiagram
 - The stats bar uses a single border-separated row (no cards) for visual density.
 - Clicking the XP cell navigates to `/leaderboard`.
 - The AI Copilot card is a condensed version of the full AI page; submitting navigates to `/ai` with the question pre-filled.
-- Groups list shows real-time online presence (green dot + count) via WebSocket.
+- Groups list shows real-time online presence (green dot + count) via Ably presence.
 
 ---
 
@@ -952,13 +962,13 @@ The deployment diagram below shows the physical distribution of software compone
    │  │                                 │  │                            │  │
    │  │  Runtime: Node.js 20 (Next.js)  │  │  Runtime: Python 3.12      │  │
    │  │  Build: Turbopack               │  │  Entry: api/index.py       │  │
-   │  │  Static: CDN-cached per route   │  │  WSGI via daphne           │  │
+   │  │  Static: CDN-cached per route   │  │  WSGI via ASGI adapter     │  │
    │  │                                 │  │                            │  │
    │  │  Env vars:                      │  │  Env vars:                 │  │
    │  │  NEXT_PUBLIC_API_URL            │  │  SECRET_KEY                │  │
-   │  │  NEXT_PUBLIC_WS_URL             │  │  POSTGRES_URL              │  │
+   │  │  NEXT_PUBLIC_ABLY_KEY           │  │  POSTGRES_URL              │  │
    │  └─────────────────────────────────┘  │  CORS_ALLOWED_ORIGINS      │  │
-   │                                        │  DJANGO_SETTINGS_MODULE    │  │
+   │                                        │  ABLY_API_KEY              │  │
    │                                        │  USE_MOCK_AI               │  │
    │                                        └──────────┬─────────────────┘  │
    └──────────────────────────────────────────────────┼────────────────────┘
@@ -984,7 +994,7 @@ The deployment diagram below shows the physical distribution of software compone
 **Deployment notes:**
 - The frontend is statically pre-rendered at build time for most routes (29 of 29 routes compiled). Dynamic routes (`/groups/[groupId]`, `/profile/[userId]`) are server-rendered on demand.
 - The backend runs as a serverless Python WSGI function. On cold start (first request after idle), Django migrations are executed automatically via `call_command('migrate')` in `api/index.py`.
-- WebSocket connections (`wss://`) are established directly between the browser and the backend. On Vercel's serverless runtime, persistent WebSocket connections are not supported; the application falls back to 3-second REST polling automatically after 3 failed connection attempts.
+- Real-time features (chat, reactions, typing indicators, focus room presence) are delivered via Ably Pub/Sub. The backend holds a root API key used to publish events; the browser subscribes directly to Ably channels using a subscribe-only key. This design is fully compatible with Vercel's stateless serverless runtime — no persistent connection to the backend is required.
 - The Neon database auto-suspends after 5 minutes of inactivity on the free tier, causing a ~1-second cold-start delay on the next query.
 
 ---
@@ -1012,17 +1022,17 @@ StudySync's backend is decomposed into 13 Django application modules, each ownin
 │  │  ─────────     │   │  ────────       │   │  ────                    │   │
 │  │  User (custom) │◄──│  StudyGroup     │◄──│  Message                 │   │
 │  │  UserProfile   │   │  GroupMembership│   │  FocusRoom               │   │
-│  │  2FA views     │   │  REST CRUD      │   │  ChatConsumer (WS)       │   │
-│  │  Auth views    │   │  join/leave     │   │  MessageListCreateView   │   │
-│  │  weekly digest │   │                 │   │  3s poll fallback        │   │
+│  │  2FA views     │   │  REST CRUD      │   │  MessageListCreateView   │   │
+│  │  Auth views    │   │  join/leave     │   │  Ably publish (root key) │   │
+│  │  weekly digest │   │  invite links   │   │  reactions, typing       │   │
 │  └────────┬───────┘   └────────┬────────┘   └──────────────────────────┘   │
 │           │                    │                                              │
 │  ┌────────▼───────┐   ┌────────▼────────┐   ┌──────────────────────────┐   │
 │  │  notifications │   │  sessions_app   │   │  analytics               │   │
 │  │  ─────────     │   │  ────────────── │   │  ─────────               │   │
 │  │  Notification  │   │  StudySession   │   │  DailyStudyLog           │   │
-│  │  NotifConsumer │   │  date-range     │   │  StudyStreak             │   │
-│  │  (WS push)     │   │  filter API     │   │  CourseGrade             │   │
+│  │  REST API      │   │  date-range     │   │  StudyStreak             │   │
+│  │  dismiss/clear │   │  filter API     │   │  CourseGrade             │   │
 │  └────────────────┘   └─────────────────┘   │  weighted avg calc       │   │
 │                                               └──────────────────────────┘   │
 │  ┌────────────────┐   ┌─────────────────┐   ┌──────────────────────────┐   │
@@ -1039,7 +1049,8 @@ StudySync's backend is decomposed into 13 Django application modules, each ownin
 │  │  ─────────     │   │  ────────       │   │  ──────                  │   │
 │  │  Resource      │   │  TutorListing   │   │  CampusSpot              │   │
 │  │  ResourceVote  │   │  TutoringRequest│   │  map/search API          │   │
-│  │  search/filter │   │  accept/decline │   └──────────────────────────┘   │
+│  │  ResourceSave  │   │  accept/decline │   └──────────────────────────┘   │
+│  │  search/filter │   │                 │                                   │
 │  └────────────────┘   └─────────────────┘                                   │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -1084,6 +1095,12 @@ Inter-module dependencies (import direction):
 | PUT/DELETE | `/api/analytics/grades/{id}/` | Update or delete a course |
 | GET/POST | `/api/resources/` | Browse / share resources |
 | POST | `/api/resources/{id}/vote/` | Toggle upvote on a resource |
+| POST | `/api/resources/{id}/save/` | Toggle bookmark on a resource |
+| GET | `/api/groups/invite/{code}/` | Get group info by invite code (no auth) |
+| POST | `/api/groups/invite/{code}/` | Join group by invite code |
+| PATCH | `/api/ai/flashcards/{id}/` | Increment flashcard review_count |
+| DELETE | `/api/notifications/{id}/` | Dismiss notification |
+| POST | `/api/notifications/clear/` | Clear all read notifications |
 | GET/POST | `/api/tutoring/listings/` | Browse tutors / create listing |
 | POST | `/api/tutoring/listings/{id}/request/` | Send tutoring request |
 | GET | `/api/tutoring/requests/incoming/` | Tutor's incoming requests |
@@ -1095,12 +1112,12 @@ Inter-module dependencies (import direction):
 | GET | `/api/analytics/streak/` | Fetch current streak |
 | GET | `/api/analytics/daily-logs/` | Fetch daily study log history |
 
-**WebSocket Endpoints:**
+**Real-time (Ably Pub/Sub Channels):**
 
-| Pattern | Consumer | Purpose |
-|---------|----------|---------|
-| `ws/chat/{group_id}/` | `ChatConsumer` | Real-time group messaging |
-| `ws/notifications/` | `NotificationConsumer` | In-app notification push |
+| Channel | Direction | Purpose |
+|---------|-----------|---------|
+| `chat-{group_id}` | Backend publishes, browser subscribes | Group chat messages, reactions, typing indicators |
+| `focus-{room_id}` | Ably presence | Focus room join/leave events |
 
 ---
 
@@ -1160,19 +1177,19 @@ The early requirements modelling phase proved its value during implementation in
 
 The most technically challenging part was the calendar scheduling feature. A time-grid layout with dynamic pixel positioning, overlap detection, click-to-schedule interaction, and live session loading from a date-range API all had to work together. Early iterations used inline styles for positioning, which triggered linter errors. The solution — CSS custom properties consumed by named CSS classes — was non-obvious but elegant, and taught me a lot about the boundary between CSS and JavaScript. Similarly, the session overlap detection algorithm went through three iterations before arriving at the column-assignment approach that handled all edge cases correctly.
 
-Deployment introduced unexpected complexity. The project was initially designed for local development with a Django development server and a local PostgreSQL instance. When the decision was made to deploy entirely on Vercel, several assumptions broke: Vercel does not support WebSockets in its serverless Python runtime, so real-time chat and notifications are non-functional in production. Django Channels, which powers those features, requires a persistent connection that Vercel's stateless function model cannot provide. This was a meaningful gap between the designed system and the deployed system that I would plan for earlier in a future project.
+Deployment introduced unexpected complexity. The project was initially designed with Django Channels for real-time chat, but Vercel's serverless Python runtime does not support persistent WebSocket connections. Discovering this after deployment forced a full replacement of the real-time layer: chat, reactions, typing indicators, and focus room presence were re-architected to use Ably Pub/Sub. The backend now publishes events to Ably channels using a root API key; the browser subscribes directly using a subscribe-only key, with no persistent connection to the Django backend required. This re-architecture resolved the production gap and the features are now fully functional on the live deployment. Had the deployment target been evaluated against real-time requirements earlier in the project, the initial architecture would have been designed around Ably from the start rather than requiring a mid-stream replacement.
 
 ### What I Learned
 
 The most important lesson was the value of modelling before building. Class diagrams forced me to think about data ownership: for example, whether `TutoringRequest` should carry a foreign key to `TutorListing` (rather than directly to the tutor's user) became obvious when drawing the relationship. That one structural decision meant I could later filter incoming requests per listing and check for duplicates with a simple database query. Had I skipped the modelling phase, I likely would have designed the data schema differently and refactored it later at higher cost.
 
-I also developed a much clearer intuition for separating server state from client state. Using React Query for API data and Zustand for local UI state (authentication tokens, WebSocket messages, gamification progress) kept the code predictable. Bugs that would have been hard to trace in a monolithic state store were easy to isolate because each state domain had a single, clear owner.
+I also developed a much clearer intuition for separating server state from client state. Using React Query for API data and Zustand for local UI state (authentication tokens, real-time chat messages, gamification progress) kept the code predictable. Bugs that would have been hard to trace in a monolithic state store were easy to isolate because each state domain had a single, clear owner.
 
 The project also exposed me to practical deployment and infrastructure concerns that coursework rarely covers: environment variable management across multiple services, database connection pooling, cold-start migration strategies, CORS configuration between a frontend domain and an API domain, and the trade-offs between monolithic and serverless hosting models.
 
 ### What I Would Do Differently
 
-**Plan the deployment architecture from day one.** The choice to use Django Channels for real-time features was made without seriously evaluating the deployment target. A production-first mindset would have led me to evaluate serverless compatibility earlier and either choose a different real-time strategy (Server-Sent Events, polling, or a managed WebSocket service like Ably or Pusher) or plan for a container-based deployment from the start.
+**Plan the deployment architecture from day one.** The choice to use Django Channels for real-time features was made without seriously evaluating the deployment target. When Vercel's serverless runtime proved incompatible with persistent WebSocket connections, the real-time layer had to be fully replaced with Ably Pub/Sub mid-project. A production-first mindset would have surfaced this constraint earlier and the architecture would have been designed around a managed Pub/Sub service from the start, avoiding the rework.
 
 **Scope more aggressively.** The fifteen feature areas delivered a comprehensive platform, but each feature had rough edges because the time budget was spread thin. If I were to do this again, I would deliver eight features with thorough edge-case handling and automated tests rather than fifteen features with minimal error handling in the less-used paths.
 

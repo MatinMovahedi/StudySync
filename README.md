@@ -1,36 +1,54 @@
 # StudySync
 
-AI-powered study group platform. Full-stack: Django 6 + Channels (backend) · Next.js 16 + Tailwind v4 (frontend).
+AI-powered collaborative study platform. Full-stack: Django 6 REST API (backend) · Next.js 16 + Tailwind v4 (frontend).
+
+Live: **[studysynch.org](https://studysynch.org)**
 
 ---
 
 ## Features
 
-**Groups & Chat**
+**Groups & Collaboration**
 - Create and join study groups with course codes, categories, and privacy settings
-- Real-time WebSocket group chat with typing indicators and emoji reactions
+- Real-time group chat via Ably Pub/Sub with typing indicators and emoji reactions
+- Collaborative whiteboard per group (Excalidraw + Ably sync, 5 s auto-save)
+- Invite links that land on a group join page — no account required to preview
 - Members sidebar, role badges (admin / member), and leave confirmation
 
 **AI Study Tools**
-- Streaming AI chat with a typewriter effect (mock by default, OpenAI when configured)
+- Streaming AI chat with typewriter effect (mock by default; wired to OpenAI when configured)
 - Quiz generator — topic + difficulty, multiple-choice with explanations
-- Flashcard generator with 3D flip animation
+- Flashcard generator with 3D flip animation, spaced-repetition review mode, and per-card delete
 - Note summarizer and concept explainer
+- AI weekly study plan generator — produces a colour-coded 7-day grid from a goal + hours/day
 
-**Analytics & Pomodoro**
-- Study streak, longest streak, total hours, and daily study log
+**Focus & Productivity**
+- Pomodoro timer with configurable work/break intervals, sound notifications, and session logging
+- Focus Rooms (Ably presence) — drop into a virtual shared study space with other students
+- Weekly time-grid calendar for scheduling and browsing study sessions with overlap detection
+
+**Analytics & Progress**
+- Study streak tracker, longest streak, total hours, and daily study log
 - 7-day area chart and 30-day bar chart of study minutes
-- Subject breakdown pie chart (populated from Pomodoro sessions)
-- Circular SVG Pomodoro timer with work / short break / long break phase switching
+- Subject breakdown pie chart
+- Grade tracker — add courses and assessments; system calculates weighted averages with colour-coded feedback
 
-**Other**
+**Community & Discovery**
+- Topic-based communities with a posts/comments feed and upvoting
+- Community wiki — collaborative markdown pages with live-edit
+- Resource library — share links and notes, categorise, tag, upvote, and bookmark
+- Peer tutoring marketplace — list yourself as a tutor or send tutoring requests
 - Campus study spots directory with ratings, amenities, noise levels, and hours
-- Notifications — real-time push via WebSocket + DB fallback for offline users
-- User onboarding flow (university, program, study style tags, courses)
-- Settings — notification toggles, password change, account danger zone
-- Dark / light mode with zero flash (anti-flash inline script + CSS variable tokens)
+
+**User & Settings**
+- Onboarding flow — university, program, study style, courses
+- Public portfolio with skills, projects, GitHub, and LinkedIn links
+- Two-Factor Authentication (TOTP) via authenticator app
+- Weekly email digest summarising study activity
+- Notification centre with per-notification dismiss and clear-read controls
+- Dark / light mode with zero flash
+- Gamification — XP, levels, and leaderboard
 - Fully responsive — collapsible sidebar on desktop, bottom tab bar on mobile
-- Pricing page at `/pricing` with monthly/annual toggle
 
 ---
 
@@ -41,11 +59,12 @@ AI-powered study group platform. Full-stack: Django 6 + Channels (backend) · Ne
 | Frontend | Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 |
 | State | Zustand (client) · React Query (server cache) |
 | Animations | Framer Motion |
-| Backend | Django 6 · Django REST Framework 3.17 · Django Channels 4 |
+| Backend | Django 6 · Django REST Framework 3.17 |
 | Auth | JWT (simplejwt) · localStorage · Axios interceptors with auto-refresh |
-| Real-time | Daphne ASGI · WebSocket · InMemoryChannelLayer (dev) / Redis (prod) |
-| Database | PostgreSQL |
+| Real-time | Ably Pub/Sub — root key on backend for publish; subscribe-only key on browser |
+| Database | PostgreSQL (Neon Serverless) |
 | AI | Mocked SSE streaming by default — set `USE_MOCK_AI = False` + `OPENAI_API_KEY` for real OpenAI |
+| Storage | Cloudinary (optional) for avatar persistence |
 
 ---
 
@@ -55,15 +74,20 @@ AI-powered study group platform. Full-stack: Django 6 + Channels (backend) · Ne
 410Project/
 ├── studysync-backend/
 │   ├── apps/
-│   │   ├── users/          # Custom User, UserProfile, auth endpoints
-│   │   ├── groups/         # StudyGroup, GroupMembership
-│   │   ├── chat/           # Message, GroupChatConsumer (WebSocket)
+│   │   ├── users/          # Custom User, UserProfile, 2FA, auth, weekly digest
+│   │   ├── groups/         # StudyGroup, GroupMembership, invite links
+│   │   ├── chat/           # Message, reactions (Ably publish + REST history)
 │   │   ├── sessions_app/   # StudySession, PomodoroSession
-│   │   ├── ai_assistant/   # AIConversation, FlashCard, streaming endpoints
-│   │   ├── analytics/      # StudyStreak, DailyStudyLog
-│   │   ├── campus/         # StudySpot
-│   │   └── notifications/  # Notification, NotificationConsumer (WebSocket)
-│   ├── config/             # Django settings, ASGI, URL root
+│   │   ├── ai_assistant/   # AIConversation, FlashCard, StudyPlan, streaming
+│   │   ├── analytics/      # StudyStreak, DailyStudyLog, CourseGrade
+│   │   ├── campus/         # CampusSpot
+│   │   ├── notifications/  # Notification (REST + dismiss/clear)
+│   │   ├── communities/    # Community, Post, Comment, WikiPage
+│   │   ├── resources/      # Resource, ResourceVote, ResourceSave
+│   │   ├── tutoring/       # TutorListing, TutoringRequest
+│   │   └── gamification/   # GamificationProfile, XP, leaderboard
+│   ├── config/             # Django settings, URL root
+│   ├── api/                # Vercel serverless entry point (api/index.py)
 │   ├── fixtures/           # Seed data
 │   └── requirements.txt
 │
@@ -71,16 +95,18 @@ AI-powered study group platform. Full-stack: Django 6 + Channels (backend) · Ne
     ├── app/
     │   ├── (auth)/         # login, signup — AnimatedBackground layout
     │   ├── (dashboard)/    # dashboard, groups, ai, pomodoro, analytics,
-    │   │                   # profile, settings, spots
+    │   │                   # profile, settings, spots, grades, planner,
+    │   │                   # tutoring, resources, communities, focus
     │   ├── onboarding/
     │   ├── pricing/
     │   └── not-found.tsx
     ├── components/
     │   ├── landing/        # Navbar, Hero, Features, HowItWorks, Testimonials, CTA
     │   ├── layout/         # Sidebar, Topbar, MobileNav
-    │   ├── shared/         # GlassCard, AnimatedBackground, GradientText
+    │   ├── shared/         # GlassCard, AnimatedBackground, GradientText,
+    │   │                   # PostCard, CommentThread
     │   └── ui/             # Button, Avatar, Badge, Input, Skeleton, ThemeToggle
-    ├── hooks/              # usePomodoro, useChat, useWebSocket
+    ├── hooks/              # usePomodoro, useChat (Ably), useFocus
     ├── lib/
     │   ├── api/            # Axios client + per-domain API modules
     │   ├── store/          # Zustand stores (auth, ui, pomodoro, notifications)
@@ -97,6 +123,7 @@ AI-powered study group platform. Full-stack: Django 6 + Channels (backend) · Ne
 - Python 3.11+
 - Node.js 20+
 - [Postgres.app](https://postgresapp.com) (or any PostgreSQL instance)
+- An [Ably](https://ably.com) free account for real-time features
 
 ### 1 — Database
 
@@ -117,9 +144,7 @@ pip install -r studysync-backend/requirements.txt
 cd studysync-backend
 python manage.py migrate
 python manage.py loaddata fixtures/*.json   # optional seed data
-
-# Run (HTTP + WebSocket on one port via Daphne)
-daphne -p 8000 config.asgi:application
+python manage.py runserver 8000
 ```
 
 ### 3 — Frontend
@@ -141,18 +166,24 @@ Password: StudySync2024!
 
 ## Environment Variables
 
-### Backend (`studysync-backend/config/settings.py`)
+### Backend
 
 | Variable | Default | Description |
 |---|---|---|
 | `SECRET_KEY` | insecure dev key | Django secret key |
 | `DEBUG` | `True` | Debug mode |
+| `DATABASE_URL` | — | PostgreSQL connection URL |
 | `USE_MOCK_AI` | `True` | Use mock SSE responses instead of OpenAI |
 | `OPENAI_API_KEY` | — | Required when `USE_MOCK_AI = False` |
+| `ABLY_API_KEY` | — | Root Ably API key for publishing chat and focus events |
+| `CLOUDINARY_URL` | — | Optional; enables persistent avatar uploads |
 
 ### Frontend
 
-No `.env` required for local dev. The Axios client points to `http://localhost:8000` by default.
+| Variable | Default | Description |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend API base URL |
+| `NEXT_PUBLIC_ABLY_KEY` | — | Ably subscribe-only key for browser clients |
 
 ---
 
@@ -163,188 +194,64 @@ All endpoints are under `/api/`. JWT access token required in `Authorization: Be
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/auth/register/` | Sign up |
-| POST | `/api/auth/login/` | Log in → `{access, refresh}` |
+| POST | `/api/auth/login/` | Log in → `{access, refresh}` or 2FA challenge |
 | POST | `/api/auth/refresh/` | Refresh access token |
+| POST | `/api/auth/2fa/verify/` | Verify TOTP code after 2FA challenge |
 | GET | `/api/users/me/` | Current user profile |
 | PATCH | `/api/users/profile/` | Update profile |
-| PATCH | `/api/users/change-password/` | Change password |
+| GET/PUT | `/api/users/2fa/setup/` | 2FA QR code setup |
+| POST | `/api/users/2fa/enable/` | Activate 2FA with verified code |
+| POST | `/api/users/2fa/disable/` | Deactivate 2FA |
 | GET/POST | `/api/groups/` | List / create study groups |
+| GET | `/api/groups/my/` | Current user's groups |
+| GET | `/api/groups/:id/` | Group detail |
 | POST | `/api/groups/:id/join/` | Join a group |
 | POST | `/api/groups/:id/leave/` | Leave a group |
+| GET | `/api/groups/:id/members/` | List group members |
+| GET | `/api/groups/invite/:code/` | Group info by invite code (no auth) |
+| POST | `/api/groups/invite/:code/` | Join group by invite code |
 | GET | `/api/chat/:id/messages/` | Fetch message history |
 | POST | `/api/ai/chat/` | Streaming AI chat (SSE) |
 | POST | `/api/ai/quiz/` | Generate quiz |
-| POST | `/api/ai/flashcards/` | Generate flashcards |
+| GET/POST | `/api/ai/flashcards/` | List / generate flashcards |
+| PATCH | `/api/ai/flashcards/:id/` | Increment flashcard `review_count` |
+| DELETE | `/api/ai/flashcards/:id/` | Delete flashcard |
 | POST | `/api/ai/summarize/` | Summarize notes |
 | POST | `/api/ai/explain/` | Explain a concept |
+| GET/POST | `/api/ai/planner/` | List past plans / generate new plan |
+| GET/POST | `/api/sessions/` | List / create study sessions |
+| DELETE | `/api/sessions/:id/` | Delete a session |
+| GET/POST | `/api/analytics/grades/` | Grade tracker courses |
+| PUT/DELETE | `/api/analytics/grades/:id/` | Update or delete a course |
+| POST | `/api/analytics/grades/:id/assessments/` | Add assessment to a course |
 | GET | `/api/analytics/streak/` | Study streak |
 | GET | `/api/analytics/hours/` | Daily study hours |
 | GET | `/api/analytics/subjects/` | Subject breakdown |
+| GET/POST | `/api/resources/` | Browse / share resources |
+| POST | `/api/resources/:id/vote/` | Toggle upvote |
+| POST | `/api/resources/:id/save/` | Toggle bookmark |
+| GET/POST | `/api/tutoring/listings/` | Browse tutors / create listing |
+| POST | `/api/tutoring/listings/:id/request/` | Send tutoring request |
+| GET | `/api/tutoring/requests/incoming/` | Tutor's incoming requests |
+| POST | `/api/tutoring/requests/:id/respond/` | Accept or decline request |
+| GET/POST | `/api/communities/` | List / create communities |
+| GET/POST | `/api/communities/:slug/wiki/` | List / create wiki pages |
+| GET/PUT | `/api/communities/:slug/wiki/:pageSlug/` | Read / edit wiki page |
 | GET | `/api/campus/spots/` | Study spots |
 | GET | `/api/notifications/` | Notification list |
-| PATCH | `/api/notifications/:id/read/` | Mark as read |
+| POST | `/api/notifications/:id/read/` | Mark as read |
+| DELETE | `/api/notifications/:id/` | Dismiss notification |
+| POST | `/api/notifications/clear/` | Clear all read notifications |
+| GET | `/api/gamification/profile/` | XP, level, badges |
+| GET | `/api/gamification/leaderboard/` | Global leaderboard |
 
-**WebSocket endpoints**
+**Real-time via Ably**
 
-| Path | Description |
-|---|---|
-| `ws://localhost:8000/ws/chat/:id/?token=<jwt>` | Group chat |
-| `ws://localhost:8000/ws/notifications/?token=<jwt>` | Live notifications |
-
----
-
-## UML & Architecture Diagrams
-
-### Entity-Relationship Diagram
-
-```mermaid
-erDiagram
-    USER {
-        int     id PK
-        string  email UK
-        string  username
-        string  first_name
-        string  last_name
-        bool    is_onboarded
-        datetime created_at
-    }
-
-    USER_PROFILE {
-        int     id PK
-        int     user_id FK
-        string  university
-        string  program
-        int     year_of_study
-        json    courses
-        json    study_style_tags
-        string  availability
-        float   total_study_hours
-        int     total_sessions
-    }
-
-    STUDY_GROUP {
-        int     id PK
-        string  name
-        string  course_code
-        string  category
-        bool    is_private
-        int     max_members
-        string  invite_code UK
-        int     created_by_id FK
-        string  avatar_color
-        datetime created_at
-    }
-
-    GROUP_MEMBERSHIP {
-        int     id PK
-        int     user_id FK
-        int     group_id FK
-        string  role
-        datetime joined_at
-    }
-
-    MESSAGE {
-        int     id PK
-        int     group_id FK
-        int     sender_id FK
-        int     reply_to_id FK
-        string  message_type
-        text    content
-        json    reactions
-        bool    is_edited
-        datetime created_at
-    }
-
-    STUDY_SESSION {
-        int     id PK
-        int     group_id FK
-        int     created_by_id FK
-        string  title
-        datetime scheduled_at
-        int     duration_minutes
-        bool    is_online
-        string  join_link
-    }
-
-    POMODORO_SESSION {
-        int     id PK
-        int     user_id FK
-        int     duration_minutes
-        bool    is_completed
-        datetime started_at
-        datetime completed_at
-        string  subject
-    }
-
-    AI_CONVERSATION {
-        int     id PK
-        int     user_id FK
-        string  title
-        json    messages
-        datetime updated_at
-    }
-
-    FLASH_CARD {
-        int     id PK
-        int     user_id FK
-        string  deck_name
-        text    front
-        text    back
-        bool    ai_generated
-        float   ease_factor
-        int     interval_days
-        datetime next_review
-    }
-
-    STUDY_STREAK {
-        int     id PK
-        int     user_id FK
-        int     current_streak
-        int     longest_streak
-        date    last_study_date
-        int     total_study_days
-    }
-
-    DAILY_STUDY_LOG {
-        int     id PK
-        int     user_id FK
-        date    date
-        int     minutes_studied
-        int     sessions_completed
-        json    subjects
-    }
-
-    NOTIFICATION {
-        int     id PK
-        int     user_id FK
-        string  notification_type
-        string  title
-        text    body
-        bool    is_read
-        int     related_object_id
-        datetime created_at
-    }
-
-    USER             ||--||  USER_PROFILE      : "has profile"
-    USER             ||--o{  GROUP_MEMBERSHIP  : "joins via"
-    USER             ||--o{  MESSAGE           : "sends"
-    USER             ||--o{  POMODORO_SESSION  : "runs"
-    USER             ||--o{  AI_CONVERSATION   : "holds"
-    USER             ||--o{  FLASH_CARD        : "owns"
-    USER             ||--||  STUDY_STREAK      : "has streak"
-    USER             ||--o{  DAILY_STUDY_LOG   : "logs"
-    USER             ||--o{  NOTIFICATION      : "receives"
-    USER             ||--o{  STUDY_GROUP       : "created_by"
-    USER             ||--o{  STUDY_SESSION     : "created_by"
-
-    STUDY_GROUP      ||--o{  GROUP_MEMBERSHIP  : "has members"
-    STUDY_GROUP      ||--o{  MESSAGE           : "contains"
-    STUDY_GROUP      ||--o{  STUDY_SESSION     : "schedules"
-
-    MESSAGE          ||--o{  MESSAGE           : "reply_to"
-```
+Chat messages, emoji reactions, typing indicators, and focus room presence are delivered through Ably Pub/Sub channels. The backend publishes to channel `chat-{groupId}` using the root API key; the browser subscribes directly using a subscribe-only key. No persistent connection to the Django backend is required — Ably handles all fan-out.
 
 ---
+
+## Architecture
 
 ### System Architecture
 
@@ -352,86 +259,40 @@ erDiagram
 graph TB
     subgraph Browser["Browser — Next.js 16"]
         UI["React Pages & Components"]
-        ZS["Zustand Stores\nauth · chat · ui · pomodoro"]
+        ZS["Zustand Stores\nauth · ui · pomodoro"]
         RQ["React Query\nserver state cache"]
         AX["Axios Client\nJWT interceptors"]
-        WS_C["WebSocket Client\nuseWebSocket hook"]
+        AB_C["Ably Client\nuseChat · useFocus hooks"]
     end
 
-    subgraph Daphne["Daphne ASGI :8000"]
-        HTTP["HTTP Router\nDjango URLs"]
-        WS_R["WebSocket Router\nChannels URLRouter"]
+    subgraph Vercel_FE["Vercel CDN — Frontend"]
+        NEXT["Next.js SSR/SSG\n30 routes"]
     end
 
-    subgraph Django["Django 6 Application"]
-        DRF["DRF ViewSets"]
-        JWT["simplejwt Auth"]
-        CHAT_C["GroupChatConsumer"]
-        NOTIF_C["NotificationConsumer"]
-        SIGNALS["Django Signals\nauto-notifications"]
-        AI["AI Client\nstreaming SSE"]
+    subgraph Vercel_BE["Vercel Serverless — Backend"]
+        DRF["Django REST Framework\nViewSets + JWT auth"]
+        AI["AI Client\nSSE streaming"]
+    end
+
+    subgraph Ably["Ably Pub/Sub"]
+        CH["chat-{groupId} channel\nfocus-{roomId} channel"]
     end
 
     subgraph Storage["Storage"]
-        PG[("PostgreSQL")]
-        CL["InMemoryChannelLayer\ndev  /  Redis prod"]
+        PG[("Neon Postgres\nPgBouncer pooling")]
+        CLD["Cloudinary\navatars (optional)"]
     end
 
     UI --> ZS
     UI --> RQ
     RQ --> AX
-    AX -->|"REST + JWT"| HTTP
-    WS_C -->|"ws://chat/id/?token=..."| WS_R
-    WS_C -->|"ws://notifications/?token=..."| WS_R
-
-    HTTP --> JWT
-    HTTP --> DRF
+    AX -->|"HTTPS REST + JWT"| DRF
+    AB_C <-->|"subscribe-only key"| CH
+    DRF -->|"root API key (publish)"| CH
     DRF --> PG
     DRF --> AI
     AI -->|"SSE chunks"| AX
-
-    WS_R --> CHAT_C
-    WS_R --> NOTIF_C
-    CHAT_C --> CL
-    NOTIF_C --> CL
-    CHAT_C --> PG
-    SIGNALS -->|"post_save Message\npost_save StudySession"| NOTIF_C
-    NOTIF_C -->|"push to user channel"| WS_C
 ```
-
----
-
-### WebSocket Message Flow
-
-```mermaid
-sequenceDiagram
-    actor Alice
-    participant FE_A as Alice's Browser
-    participant BE as GroupChatConsumer
-    participant CL as ChannelLayer
-    participant FE_B as Bob's Browser
-    actor Bob
-
-    Alice->>FE_A: types message, presses Enter
-    FE_A->>BE: WS send {type:"message", content:"..."}
-    BE->>BE: authenticate JWT from query string
-    BE->>BE: check GroupMembership
-    BE->>BE: save Message to PostgreSQL
-    BE->>CL: group_send("chat_1", {type:"chat_message",...})
-    CL->>FE_A: chat_message (echo back to Alice)
-    CL->>FE_B: chat_message (broadcast to Bob)
-    FE_A->>Alice: append message to chat
-    FE_B->>Bob: append message to chat
-
-    Note over FE_A,BE: Typing indicator — not persisted
-    Alice->>FE_A: keydown (not Enter)
-    FE_A->>BE: WS send {type:"typing", is_typing:true}
-    BE->>CL: group_send("chat_1", typing_indicator)
-    CL->>FE_B: typing_indicator event
-    FE_B->>Bob: show "Alice is typing…"
-```
-
----
 
 ### Auth & JWT Flow
 
@@ -459,15 +320,35 @@ sequenceDiagram
     AX->>AX: update localStorage
     AX->>BE: retry original request
     BE-->>FE: 200 OK
-
-    Note over FE,BE: WebSocket auth — headers not supported by browser WS API
-    FE->>BE: ws://...?token=access_token
-    BE->>BE: AccessToken(token).payload user_id
-    BE->>BE: verify GroupMembership
-    BE-->>FE: 101 Switching Protocols
 ```
 
----
+### Real-time Chat Flow (Ably)
+
+```mermaid
+sequenceDiagram
+    actor Alice
+    participant FE_A as Alice's Browser
+    participant BE as Django REST API
+    participant AB as Ably Pub/Sub
+    participant FE_B as Bob's Browser
+    actor Bob
+
+    Alice->>FE_A: types message, presses Enter
+    FE_A->>BE: POST /api/chat/{groupId}/messages/
+    BE->>BE: authenticate JWT, check GroupMembership
+    BE->>BE: save Message to PostgreSQL
+    BE->>AB: publish to channel chat-{groupId}
+    AB->>FE_A: message event (subscribe-only key)
+    AB->>FE_B: message event (subscribe-only key)
+    FE_A->>Alice: append message to chat
+    FE_B->>Bob: append message to chat
+
+    Note over FE_A,AB: Typing indicators — not persisted
+    Alice->>FE_A: keydown (not Enter)
+    FE_A->>AB: publish typing event directly via Ably
+    AB->>FE_B: typing event
+    FE_B->>Bob: show "Alice is typing…"
+```
 
 ### AI Streaming Flow
 
@@ -491,26 +372,121 @@ sequenceDiagram
     FE->>FE: hide cursor, mark complete
 ```
 
----
-
-### Notification Signal Flow
+### Entity-Relationship Diagram
 
 ```mermaid
-flowchart TD
-    A[Message.save] --> B{post_save signal}
-    B --> C[on_message_created]
-    C --> D{for each group member\nexcluding sender}
-    D --> E[Notification.objects.create]
-    E --> F[push_notification]
-    F --> G[get_channel_layer]
-    G --> H[group_send notifications_user_id]
-    H --> I{user connected\nto WS?}
-    I -->|yes| J[NotificationConsumer\nsends to browser]
-    I -->|no| K[Notification sits in DB\nfetched on next login]
-    J --> L[bell badge updates\nin real time]
-```
+erDiagram
+    USER {
+        int     id PK
+        string  email UK
+        string  first_name
+        string  last_name
+        bool    is_onboarded
+        datetime created_at
+    }
 
----
+    USER_PROFILE {
+        int     id PK
+        int     user_id FK
+        string  university
+        string  program
+        int     year_of_study
+        json    courses
+        json    study_style_tags
+        bool    email_digest_enabled
+        bool    two_fa_enabled
+        string  totp_secret
+        float   total_study_hours
+    }
+
+    STUDY_GROUP {
+        int     id PK
+        string  name
+        string  course_code
+        string  category
+        bool    is_private
+        int     max_members
+        string  invite_code UK
+        int     created_by_id FK
+        string  avatar_color
+    }
+
+    GROUP_MEMBERSHIP {
+        int     id PK
+        int     user_id FK
+        int     group_id FK
+        string  role
+        datetime joined_at
+    }
+
+    MESSAGE {
+        int     id PK
+        int     group_id FK
+        int     sender_id FK
+        string  message_type
+        text    content
+        json    reactions
+        bool    is_edited
+        datetime created_at
+    }
+
+    RESOURCE {
+        int     id PK
+        int     created_by_id FK
+        string  title
+        string  category
+        json    tags
+        int     upvotes
+    }
+
+    RESOURCE_SAVE {
+        int     id PK
+        int     resource_id FK
+        int     user_id FK
+    }
+
+    FLASH_CARD {
+        int     id PK
+        int     user_id FK
+        string  deck_name
+        text    front
+        text    back
+        bool    ai_generated
+        int     review_count
+    }
+
+    STUDY_STREAK {
+        int     id PK
+        int     user_id FK
+        int     current_streak
+        int     longest_streak
+        date    last_study_date
+    }
+
+    NOTIFICATION {
+        int     id PK
+        int     user_id FK
+        string  notification_type
+        string  title
+        text    body
+        bool    is_read
+        datetime created_at
+    }
+
+    USER             ||--||  USER_PROFILE      : "has profile"
+    USER             ||--o{  GROUP_MEMBERSHIP  : "joins via"
+    USER             ||--o{  MESSAGE           : "sends"
+    USER             ||--||  STUDY_STREAK      : "has streak"
+    USER             ||--o{  NOTIFICATION      : "receives"
+    USER             ||--o{  RESOURCE          : "creates"
+    USER             ||--o{  FLASH_CARD        : "owns"
+
+    STUDY_GROUP      ||--o{  GROUP_MEMBERSHIP  : "has members"
+    STUDY_GROUP      ||--o{  MESSAGE           : "contains"
+
+    RESOURCE         ||--o{  RESOURCE_SAVE     : "bookmarked via"
+    USER             ||--o{  RESOURCE_SAVE     : "bookmarks"
+```
 
 ### Frontend Component Tree
 
@@ -520,36 +496,34 @@ graph TD
     Auth["(auth)/layout.tsx\nAnimatedBackground"]
     Dash["(dashboard)/layout.tsx\nauth guard · notifications"]
     Land["app/page.tsx\nLanding page"]
-    Price["app/pricing/page.tsx"]
 
     Root --> Auth
     Root --> Dash
     Root --> Land
-    Root --> Price
 
     Auth --> Login["login/page.tsx"]
     Auth --> Signup["signup/page.tsx"]
 
-    Land --> LNav["Navbar"]
-    Land --> LHero["HeroSection"]
-    Land --> LFeat["FeaturesSection"]
-    Land --> LHow["HowItWorksSection"]
-    Land --> LTest["TestimonialsSection"]
-    Land --> LCTA["CTASection"]
-
     Dash --> Sidebar["Sidebar\ncollapsible · logout"]
-    Dash --> Topbar["Topbar\nsearch · notifications · theme · avatar→profile"]
+    Dash --> Topbar["Topbar\nsearch · notifications · theme · avatar"]
     Dash --> MobileNav["MobileNav\nbottom tab bar md:hidden"]
 
-    Dash --> DB["dashboard/page.tsx\ngreeting · streak · stats · groups · sessions"]
-    Dash --> Groups["groups/page.tsx\nsearch · filter · join · create modal"]
-    Dash --> GD["groups/[id]/page.tsx\nmembers · sessions · leave"]
-    Dash --> Chat["groups/[id]/chat/page.tsx\nuseChat · WS · emoji · members panel"]
-    Dash --> AI["ai/page.tsx\nchat · quiz · flashcards · summarize · explain"]
-    Dash --> Pomo["pomodoro/page.tsx\nSVG ring · phase switching · subject input"]
+    Dash --> DB["dashboard/page.tsx"]
+    Dash --> Groups["groups/page.tsx"]
+    Dash --> GD["groups/[id]/page.tsx"]
+    Dash --> Chat["groups/[id]/chat/page.tsx\nuseChat (Ably) · emoji reactions"]
+    Dash --> WB["groups/[id]/whiteboard/page.tsx\nExcalidraw + Ably sync"]
+    Dash --> Join["groups/join/[inviteCode]/page.tsx"]
+    Dash --> AI["ai/page.tsx\nchat · quiz · flashcards · review mode · summarize"]
+    Dash --> Pomo["pomodoro/page.tsx\nSVG ring · phase switching"]
+    Dash --> Sched["schedule/page.tsx\ntime-grid calendar · overlap detection"]
+    Dash --> Plan["planner/page.tsx\nAI 7-day grid"]
+    Dash --> Grades["grades/page.tsx\nweighted average calc"]
+    Dash --> Res["resources/page.tsx\nsearch · filter · bookmark"]
+    Dash --> Tut["tutoring/page.tsx\nlistings · requests"]
+    Dash --> Comm["communities/page.tsx\nposts · wiki"]
+    Dash --> Focus["focus/page.tsx\nAbly presence rooms"]
     Dash --> Analy["analytics/page.tsx\nAreaChart · PieChart · BarChart"]
-    Dash --> Prof["profile/page.tsx\nedit bio · stats · courses · study style"]
-    Dash --> ProfU["profile/[userId]/page.tsx\npublic view"]
-    Dash --> Sett["settings/page.tsx\ntoggles · password change · logout"]
-    Dash --> Spots["spots/page.tsx\nstudy spots · ratings · amenities"]
+    Dash --> Prof["profile/page.tsx"]
+    Dash --> Spots["spots/page.tsx"]
 ```

@@ -20,7 +20,7 @@ The scope covers two primary actors — **Students** (the primary user) and the 
 | FR-02 | The system shall authenticate users via email and password and issue JWT access/refresh tokens. |
 | FR-03 | The system shall support optional Two-Factor Authentication (TOTP) via an authenticator app. |
 | FR-04 | The system shall allow users to create, browse, join, and leave study groups. |
-| FR-05 | The system shall provide real-time group chat within each study group using WebSockets. |
+| FR-05 | The system shall provide real-time group chat within each study group using a managed Pub/Sub service (Ably), delivering messages and typing indicators to all connected members. |
 | FR-06 | The system shall allow group members to schedule study sessions with a title, date/time, duration, and optional online join link or physical location. |
 | FR-07 | The system shall display scheduled sessions on a weekly time-grid calendar with overlap detection. |
 | FR-08 | The system shall provide a Pomodoro timer with configurable work and break intervals. |
@@ -49,7 +49,7 @@ The scope covers two primary actors — **Students** (the primary user) and the 
 | NFR-02 | Performance | The AI study planner shall return a generated plan within 10 seconds. |
 | NFR-03 | Security | All passwords shall be stored using Django's PBKDF2 hashing algorithm; plaintext passwords shall never be persisted. |
 | NFR-04 | Security | All API endpoints except login and registration shall require a valid JWT bearer token. |
-| NFR-05 | Security | WebSocket connections shall be validated against the server's `ALLOWED_HOSTS` before being accepted. |
+| NFR-05 | Security | Real-time Pub/Sub connections shall use subscribe-only API keys on the client side; only the backend server holds the root publish key. |
 | NFR-06 | Usability | The interface shall be fully usable on screens from 375 px wide (mobile) to 2560 px wide (desktop). |
 | NFR-07 | Usability | Key interactive elements shall have ARIA labels to meet WCAG 2.1 Level AA accessibility guidelines. |
 | NFR-08 | Scalability | The backend architecture shall support horizontal scaling; session state shall not be stored in process memory. |
@@ -207,21 +207,21 @@ The following use cases are identified for StudySync. The primary actor in all c
 | **Use Case Name** | Send a Message in Group Chat |
 | **Use Case ID** | UC-05 |
 | **Actor(s)** | Student (primary) |
-| **Description** | A group member sends a text message in the group's real-time chat channel. All online members receive the message instantly via WebSocket. |
-| **Preconditions** | The student is logged in and is a member of the group. A WebSocket connection to the group's chat channel is established. |
-| **Postconditions** | The message is persisted in the database and broadcast to all connected members of the group. |
+| **Description** | A group member sends a text message in the group's real-time chat channel. All online members receive the message instantly via Ably Pub/Sub. |
+| **Preconditions** | The student is logged in and is a member of the group. The Ably client is subscribed to the group's chat channel. |
+| **Postconditions** | The message is persisted in the database and delivered to all members subscribed to the channel. |
 
 **Main Flow:**
 1. The student navigates to `/groups/{groupId}/chat`.
-2. The system establishes a WebSocket connection authenticated by the student's JWT token.
-3. Previous messages are loaded from the REST API and displayed in chronological order.
+2. The system subscribes the Ably client to channel `chat-{groupId}` using a subscribe-only API key.
+3. Previous messages are loaded from `GET /api/chat/{groupId}/messages/` and displayed in chronological order.
 4. The student types a message in the input field and presses Enter or clicks Send.
-5. The message is sent over the WebSocket connection to the server.
-6. The server persists the message and broadcasts it to all members currently connected to the group channel.
-7. The message appears in real-time in all connected members' chat windows.
+5. The browser sends the message to `POST /api/chat/{groupId}/messages/` via HTTPS.
+6. The server persists the message in the database and publishes it to the Ably channel using the root API key.
+7. Ably delivers the message event to all subscribed members; each client appends it to the chat display.
 
-**Alternative Flow — WebSocket Disconnected:**
-- If the connection drops, the UI displays a "Reconnecting…" indicator and automatically attempts to reconnect with exponential back-off.
+**Alternative Flow — Connection Lost:**
+- If the Ably connection drops, the client automatically reconnects and re-subscribes to the channel.
 
 ---
 
@@ -251,28 +251,32 @@ The following use cases are identified for StudySync. The primary actor in all c
 
 ---
 
-### UC-07: Run Pomodoro Timer
+### UC-07: View Weekly Schedule Calendar
 
 | Field | Detail |
 |-------|--------|
-| **Use Case Name** | Run Pomodoro Timer |
+| **Use Case Name** | View Weekly Schedule Calendar |
 | **Use Case ID** | UC-07 |
 | **Actor(s)** | Student (primary) |
-| **Description** | A student uses the built-in Pomodoro timer to structure their study session into focused work intervals followed by short breaks. Completed sessions are logged and contribute to analytics. |
+| **Description** | A student views their upcoming study sessions on a weekly time-grid calendar. Sessions from all groups the student belongs to are displayed as colour-coded blocks; overlapping sessions are laid out side-by-side. |
 | **Preconditions** | The student is logged in. |
-| **Postconditions** | Completed Pomodoro intervals are recorded in the student's study log, updating total study hours and streak. |
+| **Postconditions** | All study sessions scheduled for the current week are displayed accurately, with overlap resolved by a column-assignment layout algorithm. |
 
 **Main Flow:**
-1. The student navigates to `/pomodoro`.
-2. The student optionally adjusts the work duration (default 25 min) and break duration (default 5 min).
-3. The student clicks "Start".
-4. The timer counts down, displaying the remaining time prominently.
-5. When the work interval ends, the system plays a notification sound and automatically switches to the break phase.
-6. When the break ends, the system prompts the student to start the next interval.
-7. After completing a session, the system records the session duration in `DailyStudyLog` and increments the streak if applicable.
+1. The student navigates to `/schedule`.
+2. The system fetches sessions for the current week via `GET /api/sessions/?from=...&to=...`.
+3. The calendar renders a 7-column grid with hourly rows from 7 am to 10 pm.
+4. Each session is positioned absolutely using its `scheduled_at` time and `duration_minutes`; overlapping sessions are placed side-by-side.
+5. The current-time indicator (a horizontal brand-coloured line) is rendered in today's column.
+6. The student may use ‹ / › navigation to move to the previous or next week.
 
-**Alternative Flow — Pause / Stop:**
-- The student may pause the timer at any point. Stopping mid-session logs the completed portion of the interval.
+**Alternative Flow — Click to Schedule:**
+- The student clicks any empty time slot on the calendar grid.
+- The system pre-fills a "New Session" modal with the clicked date and time.
+- The student completes the form and clicks "Schedule" to create the session (see UC-06).
+
+**Alternative Flow — No Sessions:**
+- If no sessions exist for the selected week, the calendar grid is displayed empty with a prompt to create the first session.
 
 ---
 
@@ -314,6 +318,32 @@ The following use cases are identified for StudySync. The primary actor in all c
 
 ---
 
+### UC-09: Ask the AI Study Assistant
+
+| Field | Detail |
+|-------|--------|
+| **Use Case Name** | Ask the AI Study Assistant |
+| **Use Case ID** | UC-09 |
+| **Actor(s)** | Student (primary), AI Service (secondary) |
+| **Description** | A student submits an academic question or prompt to the AI assistant and receives a generated response in a conversational chat interface. |
+| **Preconditions** | The student is logged in. |
+| **Postconditions** | The student's message and the AI response are stored in the conversation history. The student's monthly AI message count increments. |
+
+**Main Flow:**
+1. The student navigates to `/ai`.
+2. The student types a question or prompt in the message input and submits.
+3. The system appends the student's message to the conversation history display.
+4. A loading indicator appears.
+5. The system sends the conversation history and the new message to the AI service (OpenAI GPT).
+6. The AI service returns a response.
+7. The system appends the AI response to the display and removes the loading indicator.
+8. Both the student's message and the AI response are persisted in the database.
+
+**Alternative Flow — AI Service Unavailable:**
+- If the AI service returns an error or `USE_MOCK_AI=True` is set, the system returns a pre-defined mock response and logs a warning.
+
+---
+
 ### UC-10: Generate AI Weekly Study Plan
 
 | Field | Detail |
@@ -350,32 +380,6 @@ The following use cases are identified for StudySync. The primary actor in all c
 
 ---
 
-### UC-09: Ask the AI Study Assistant
-
-| Field | Detail |
-|-------|--------|
-| **Use Case Name** | Ask the AI Study Assistant |
-| **Use Case ID** | UC-09 |
-| **Actor(s)** | Student (primary), AI Service (secondary) |
-| **Description** | A student submits an academic question or prompt to the AI assistant and receives a generated response in a conversational chat interface. |
-| **Preconditions** | The student is logged in. |
-| **Postconditions** | The student's message and the AI response are stored in the conversation history. The student's monthly AI message count increments. |
-
-**Main Flow:**
-1. The student navigates to `/ai`.
-2. The student types a question or prompt in the message input and submits.
-3. The system appends the student's message to the conversation history display.
-4. A loading indicator appears.
-5. The system sends the conversation history and the new message to the AI service (OpenAI GPT).
-6. The AI service returns a response.
-7. The system appends the AI response to the display and removes the loading indicator.
-8. Both the student's message and the AI response are persisted in the database.
-
-**Alternative Flow — AI Service Unavailable:**
-- If the AI service returns an error or `USE_MOCK_AI=True` is set, the system returns a pre-defined mock response and logs a warning.
-
----
-
 ### UC-11: Track Course Grades
 
 | Field | Detail |
@@ -398,6 +402,70 @@ The following use cases are identified for StudySync. The primary actor in all c
 
 **Alternative Flow — Weights Exceed 100%:**
 - The system displays a warning if total assessment weights exceed 100%, but still calculates based on the provided data.
+
+---
+
+### UC-12: Browse and Share Resources
+
+| Field | Detail |
+|-------|--------|
+| **Use Case Name** | Browse and Share Resources |
+| **Use Case ID** | UC-12 |
+| **Actor(s)** | Student (primary) |
+| **Description** | A student discovers community-curated study resources (links, notes, tutorials, cheat sheets) and optionally contributes a new resource. Resources can be upvoted, bookmarked, searched, and filtered by category. |
+| **Preconditions** | The student is logged in. |
+| **Postconditions** | If sharing: a new `Resource` record is persisted and visible to all users. If upvoting: the resource's upvote count is incremented. If bookmarking: a `ResourceSave` record is created for the student. |
+
+**Main Flow (Browse):**
+1. The student navigates to `/resources`.
+2. The system fetches and displays resources sorted by upvotes (default: "Top").
+3. The student optionally filters by category (notes, cheat sheet, tutorial, tool, video, article) or searches by keyword.
+4. The student clicks the "Saved" toggle to view only their bookmarked resources.
+
+**Main Flow (Share):**
+1. The student clicks "Share" to open the resource creation modal.
+2. The student enters a title (required), description (required), optional URL, optional tags, and a category.
+3. The student submits the form.
+4. The system creates the resource and closes the modal; the new resource appears at the top of the "New" sort view.
+
+**Main Flow (Bookmark):**
+1. The student clicks the bookmark icon on any resource card.
+2. The system toggles the save state — creating or deleting a `ResourceSave` record.
+3. The icon updates immediately to reflect the saved state.
+
+**Alternative Flow — Upvote:**
+- The student clicks the upvote chevron on a resource card; the system toggles the vote and updates the count.
+
+---
+
+### UC-14: Edit Community Wiki Page
+
+| Field | Detail |
+|-------|--------|
+| **Use Case Name** | Edit Community Wiki Page |
+| **Use Case ID** | UC-14 |
+| **Actor(s)** | Student (primary) |
+| **Description** | A community member edits a collaboratively maintained wiki page. Wiki pages are written in markdown and are versioned by last-updated timestamp. Any community member may edit any page. |
+| **Preconditions** | The student is logged in and has joined the community. The wiki page exists (or the student creates a new one). |
+| **Postconditions** | The wiki page's `content`, `updated_at`, and `updated_by` fields are updated in the database. The rendered page reflects the new content for all readers. |
+
+**Main Flow:**
+1. The student navigates to a community page (e.g., `/communities/cs-401`) and selects the "Wiki" tab.
+2. The system lists existing wiki pages for the community.
+3. The student clicks a page title to open it.
+4. The system displays the rendered markdown content and an "Edit" button.
+5. The student clicks "Edit"; the content switches to a markdown textarea pre-filled with the current content.
+6. The student makes changes and clicks "Save".
+7. The system sends `PUT /api/communities/{slug}/wiki/{pageSlug}/` with the updated content.
+8. The server updates the record and returns the new content.
+9. The page re-renders the updated markdown content.
+
+**Alternative Flow — Create New Page:**
+- The student clicks "New Page", enters a title and initial content, and submits.
+- The system creates a new `WikiPage` record with a slug derived from the title.
+
+**Alternative Flow — Concurrent Edit:**
+- If another user saves the page while the student is editing, the student's save overwrites the intermediate version (last-write-wins; no conflict detection).
 
 ---
 
@@ -527,7 +595,7 @@ Student ──── Register Account
         ──── Join Study Group
                └── <<includes>> Browse Group Directory
         ──── Send Message in Chat
-               └── <<includes>> Establish WebSocket Connection
+               └── <<includes>> Subscribe to Ably Channel
         ──── Schedule Study Session
                └── <<includes>> Select Group
         ──── View Weekly Schedule Calendar
