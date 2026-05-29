@@ -1,12 +1,12 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Send, Sparkles, BookOpen, Layers, FileText, Lightbulb, RotateCcw, Check, X } from 'lucide-react';
+import { Brain, Send, Sparkles, BookOpen, Layers, FileText, Lightbulb, RotateCcw, Check, X, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { GlassCard } from '../../../components/shared/GlassCard';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { streamAIChat, generateQuiz, generateFlashcards, summarizeNotes, explainConcept } from '../../../lib/api/ai';
+import { streamAIChat, generateQuiz, generateFlashcards, summarizeNotes, explainConcept, deleteFlashcard } from '../../../lib/api/ai';
 import { staggerContainer, staggerItem } from '../../../lib/utils/animations';
 import { QuizQuestion, FlashCard } from '../../../lib/types';
 
@@ -27,26 +27,36 @@ const TABS = [
 
 const INPUT_CLASS = 'bg-surface-card border border-surface-border rounded-md px-3 h-9 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-colors';
 
-function FlipCard({ card }: { card: FlashCard }) {
+function FlipCard({ card, onDelete }: { card: FlashCard; onDelete: () => void }) {
   const [flipped, setFlipped] = useState(false);
   return (
-    <div className="relative h-48 cursor-pointer" style={{ perspective: 1000 }} onClick={() => setFlipped(f => !f)}>
-      <motion.div
-        className="absolute inset-0"
-        style={{ transformStyle: 'preserve-3d' }}
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.5, ease: 'easeInOut' }}
+    <div className="relative h-48 group/card" style={{ perspective: 1000 }}>
+      <div className="cursor-pointer absolute inset-0" onClick={() => setFlipped(f => !f)}>
+        <motion.div
+          className="absolute inset-0"
+          style={{ transformStyle: 'preserve-3d' }}
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
+        >
+          <div className="absolute inset-0 bg-surface-card border border-surface-border rounded-md flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden' }}>
+            <div className="text-[10px] text-text-muted uppercase tracking-wider mb-3">Question</div>
+            <p className="text-text-primary font-medium text-sm">{card.front}</p>
+            <div className="mt-4 text-xs text-text-muted">Click to reveal answer</div>
+          </div>
+          <div className="absolute inset-0 bg-emerald-950/40 border border-emerald-700/40 rounded-md flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+            <div className="text-[10px] text-brand uppercase tracking-wider mb-3">Answer</div>
+            <p className="text-text-primary text-sm">{card.back}</p>
+          </div>
+        </motion.div>
+      </div>
+      <button
+        type="button"
+        aria-label="Delete flashcard"
+        onClick={onDelete}
+        className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center text-text-muted hover:text-rose-400 rounded-md hover:bg-surface-elevated"
       >
-        <div className="absolute inset-0 bg-surface-card border border-surface-border rounded-md flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden' }}>
-          <div className="text-[10px] text-text-muted uppercase tracking-wider mb-3">Question</div>
-          <p className="text-text-primary font-medium text-sm">{card.front}</p>
-          <div className="mt-4 text-xs text-text-muted">Click to reveal answer</div>
-        </div>
-        <div className="absolute inset-0 bg-emerald-950/40 border border-emerald-700/40 rounded-md flex flex-col items-center justify-center p-6 text-center" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-          <div className="text-[10px] text-brand uppercase tracking-wider mb-3">Answer</div>
-          <p className="text-text-primary text-sm">{card.back}</p>
-        </div>
-      </motion.div>
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }
@@ -344,7 +354,17 @@ export default function AIPage() {
                 {flashLoading && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i)=><Skeleton key={i} className="h-48" />)}</div>}
                 {flashCards.length > 0 && !flashLoading && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {flashCards.map((c, i) => <FlipCard key={i} card={c} />)}
+                    {flashCards.map((c) => (
+                      <FlipCard
+                        key={c.id}
+                        card={c}
+                        onDelete={() => {
+                          deleteFlashcard(c.id).then(() =>
+                            setFlashCards(prev => prev.filter(f => f.id !== c.id))
+                          ).catch(() => {});
+                        }}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

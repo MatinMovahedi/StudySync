@@ -74,6 +74,11 @@ class FlashcardListView(generics.ListAPIView):
         return FlashCard.objects.filter(user=self.request.user)
 
 
+class FlashcardDetailView(generics.DestroyAPIView):
+    def get_queryset(self):
+        return FlashCard.objects.filter(user=self.request.user)
+
+
 class SummarizeView(APIView):
     def post(self, request):
         notes = request.data.get('notes', '')

@@ -14,6 +14,7 @@ interface ChatState {
   setMessages: (groupId: number, messages: Message[]) => void;
   setTyping: (groupId: number, user: TypingUser, isTyping: boolean) => void;
   setOnline: (groupId: number, userId: number, online: boolean) => void;
+  updateMessageReactions: (groupId: number, messageId: number, reactions: Record<string, string[]>) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -39,5 +40,12 @@ export const useChatStore = create<ChatState>((set) => ({
       const current = state.onlineUsers[groupId] || [];
       const filtered = current.filter(id => id !== userId);
       return { onlineUsers: { ...state.onlineUsers, [groupId]: online ? [...filtered, userId] : filtered } };
+    }),
+  updateMessageReactions: (groupId, messageId, reactions) =>
+    set((state) => {
+      const msgs = (state.messages[groupId] || []).map(m =>
+        m.id === messageId ? { ...m, reactions } : m
+      );
+      return { messages: { ...state.messages, [groupId]: msgs } };
     }),
 }));

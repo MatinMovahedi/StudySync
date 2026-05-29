@@ -69,6 +69,8 @@ export const createComment = (postId: number, data: { body: string; parent?: num
 export const voteComment = (id: number, value: 1 | -1 | 0) =>
   api.post(`/api/comments/${id}/vote/`, { value }).then(r => r.data);
 export const getSavedPosts = () => api.get('/api/communities/saved/').then(r => r.data);
+export const deletePost = (id: number) => api.delete(`/api/posts/${id}/delete/`);
+export const deleteComment = (id: number) => api.delete(`/api/comments/${id}/delete/`);
 
 export interface WikiPage {
   id: number;

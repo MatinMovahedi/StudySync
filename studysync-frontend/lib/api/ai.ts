@@ -16,6 +16,7 @@ export const explainConcept = (concept: string, level: string) =>
   api.post('/api/ai/explain/', { concept, level }).then(r => r.data);
 
 export const getFlashcards = () => api.get('/api/ai/flashcards/list/').then(r => r.data);
+export const deleteFlashcard = (id: number) => api.delete(`/api/ai/flashcards/${id}/`);
 
 export async function streamAIChat(
   messages: { role: string; content: string }[],

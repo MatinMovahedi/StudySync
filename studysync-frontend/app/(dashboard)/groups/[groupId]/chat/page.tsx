@@ -18,10 +18,11 @@ export default function ChatPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const id = Number(groupId);
   const { user } = useAuthStore();
-  const { messages, typingUsers, sendMessage, sendTyping } = useChat(id);
+  const { messages, typingUsers, sendMessage, sendTyping, reactToMessage } = useChat(id);
   const [input, setInput] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [reactionPicker, setReactionPicker] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -132,20 +133,56 @@ export default function ChatPage() {
                   <span className="text-[10px] text-text-muted">{formatMessageTime(group_msg.messages[0].created_at || group_msg.messages[0].timestamp || '')}</span>
                 </div>
                 {group_msg.messages.map((msg, mi) => (
-                  <div key={msg.id || mi} className="relative">
-                    <div className={`inline-block max-w-[80%] px-3 py-2 rounded-md text-sm mb-1 ${
-                      msg.sender?.id === user?.id
-                        ? 'bg-brand text-white'
-                        : 'bg-surface-elevated text-text-primary'
-                    }`}>
-                      {msg.content}
+                  <div key={msg.id || mi} className="relative group/bubble">
+                    <div className="flex items-center gap-1">
+                      <div className={`inline-block max-w-[80%] px-3 py-2 rounded-md text-sm mb-1 ${
+                        msg.sender?.id === user?.id
+                          ? 'bg-brand text-white'
+                          : 'bg-surface-elevated text-text-primary'
+                      }`}>
+                        {msg.content}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="React to message"
+                        onClick={() => setReactionPicker(reactionPicker === (msg.id || mi) ? null : (msg.id || mi))}
+                        className="opacity-0 group-hover/bubble:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center text-text-muted hover:text-text-secondary rounded-md hover:bg-surface-elevated mb-1"
+                      >
+                        <Smile className="w-3.5 h-3.5" />
+                      </button>
                     </div>
+                    <AnimatePresence>
+                      {reactionPicker === (msg.id || mi) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                          className="absolute left-0 bottom-8 bg-surface-card border border-surface-border rounded-md p-1.5 flex gap-1 shadow-card z-20"
+                        >
+                          {REACTIONS.map(e => (
+                            <button
+                              type="button"
+                              key={e}
+                              onClick={() => { reactToMessage(msg.id!, e); setReactionPicker(null); }}
+                              className="w-7 h-7 flex items-center justify-center text-base hover:bg-surface-elevated rounded-md transition-colors"
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     {Object.keys(msg.reactions || {}).length > 0 && (
                       <div className="flex gap-1 mt-0.5 flex-wrap">
                         {Object.entries(msg.reactions).map(([emoji, users]) => (
-                          <span key={emoji} className="bg-surface-elevated border border-surface-border rounded-full px-2 py-0.5 text-xs flex items-center gap-1 cursor-pointer hover:bg-surface-elevated transition-colors">
+                          <button
+                            type="button"
+                            key={emoji}
+                            onClick={() => reactToMessage(msg.id!, emoji)}
+                            className="bg-surface-elevated border border-surface-border rounded-full px-2 py-0.5 text-xs flex items-center gap-1 hover:border-brand/40 transition-colors"
+                          >
                             {emoji} <span className="text-text-muted">{(users as string[]).length}</span>
-                          </span>
+                          </button>
                         ))}
                       </div>
                     )}

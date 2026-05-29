@@ -9,7 +9,7 @@ import { Message } from '../lib/types';
 const ABLY_KEY = process.env.NEXT_PUBLIC_ABLY_KEY ?? null;
 
 export function useChat(groupId: number) {
-  const { addMessage, setMessages, setTyping, messages, typingUsers } = useChatStore();
+  const { addMessage, setMessages, setTyping, updateMessageReactions, messages, typingUsers } = useChatStore();
   const { user } = useAuthStore();
   const ablyRef = useRef<import('ably').Realtime | null>(null);
   const channelRef = useRef<import('ably').RealtimeChannel | null>(null);
@@ -56,6 +56,12 @@ export function useChat(groupId: number) {
           setTyping(groupId, { user_id: d.user_id, username: d.username }, d.is_typing);
         }
       });
+
+      channel.subscribe('reaction', (msg) => {
+        if (cancelled) return;
+        const d = msg.data as { message_id: number; reactions: Record<string, string[]> };
+        updateMessageReactions(groupId, d.message_id, d.reactions);
+      });
     })();
 
     return () => {
@@ -65,7 +71,12 @@ export function useChat(groupId: number) {
       ablyRef.current = null;
       channelRef.current = null;
     };
-  }, [groupId, user?.id, addMessage, setTyping]);
+  }, [groupId, user?.id, addMessage, setTyping, updateMessageReactions]);
+
+  const reactToMessage = useCallback(async (messageId: number, emoji: string) => {
+    const r = await api.post(`/api/chat/messages/${messageId}/react/`, { emoji });
+    updateMessageReactions(groupId, messageId, r.data.reactions);
+  }, [groupId, updateMessageReactions]);
 
   const sendMessage = useCallback(async (content: string) => {
     const r = await api.post(`/api/chat/${groupId}/messages/`, {
@@ -86,6 +97,7 @@ export function useChat(groupId: number) {
     typingUsers: typingUsers[groupId] || [],
     sendMessage,
     sendTyping,
+    reactToMessage,
     isFallback: false,
   };
 }

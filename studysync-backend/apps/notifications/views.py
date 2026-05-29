@@ -22,3 +22,15 @@ class MarkAllReadView(APIView):
     def post(self, request):
         Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
         return Response({'message': 'All marked as read'})
+
+
+class NotificationDeleteView(APIView):
+    def delete(self, request, pk):
+        Notification.objects.filter(pk=pk, user=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class NotificationClearView(APIView):
+    def delete(self, request):
+        Notification.objects.filter(user=request.user, is_read=True).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

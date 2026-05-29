@@ -1,12 +1,13 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { MessageSquare, Bookmark, BookmarkCheck } from 'lucide-react';
+import { MessageSquare, Bookmark, BookmarkCheck, Trash2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlassCard } from './GlassCard';
 import { VoteButton } from './VoteButton';
 import { PostTypeTag } from './PostTypeTag';
-import { savePost, type Post } from '../../lib/api/communities';
+import { savePost, deletePost, type Post } from '../../lib/api/communities';
+import { useAuthStore } from '../../lib/store/authStore';
 import { formatRelativeTime } from '../../lib/utils/format';
 import { staggerItem } from '../../lib/utils/animations';
 
@@ -18,11 +19,22 @@ interface PostCardProps {
 export function PostCard({ post, showCommunity = true }: PostCardProps) {
   const router = useRouter();
   const qc = useQueryClient();
+  const { user } = useAuthStore();
 
   const saveMutation = useMutation({
     mutationFn: () => savePost(post.id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['community-posts'] }),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePost(post.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['community-posts'] });
+      qc.invalidateQueries({ queryKey: ['feed'] });
+    },
+  });
+
+  const isOwn = user?.id === post.author.id;
 
   const authorName = post.author.id === null
     ? 'Anonymous Student'
@@ -87,6 +99,17 @@ export function PostCard({ post, showCommunity = true }: PostCardProps) {
             >
               {post.is_saved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
             </button>
+            {isOwn && (
+              <button
+                type="button"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                aria-label="Delete post"
+                className="text-text-muted hover:text-rose-400 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </GlassCard>

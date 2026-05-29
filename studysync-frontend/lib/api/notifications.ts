@@ -12,3 +12,5 @@ function unwrapList<T>(r: { data: unknown }): T[] {
 export const getNotifications = () => api.get('/api/notifications/').then(r => unwrapList<Notification>(r));
 export const markRead = (id: number) => api.patch(`/api/notifications/${id}/read/`).then(r => r.data);
 export const markAllRead = () => api.post('/api/notifications/read-all/').then(r => r.data);
+export const deleteNotification = (id: number) => api.delete(`/api/notifications/${id}/delete/`);
+export const clearNotifications = () => api.delete('/api/notifications/clear/');

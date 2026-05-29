@@ -79,4 +79,51 @@ class MessageReactView(APIView):
             del reactions[emoji]
         message.reactions = reactions
         message.save(update_fields=['reactions'])
+        _publish_ably(
+            f'chat-{message.group_id}',
+            'reaction',
+            {'message_id': message.id, 'reactions': message.reactions},
+        )
         return Response(MessageSerializer(message).data)
+
+
+class FocusRoomView(APIView):
+    def get(self, request, group_id):
+        from apps.groups.models import StudyGroup
+        get_object_or_404(StudyGroup, pk=group_id)
+        from apps.chat.models import FocusRoom
+        try:
+            fr = FocusRoom.objects.get(group_id=group_id)
+            return Response({
+                'active': True,
+                'started_at': fr.started_at.isoformat(),
+                'duration': fr.duration,
+                'started_by': fr.started_by_id,
+            })
+        except FocusRoom.DoesNotExist:
+            return Response({'active': False, 'started_at': None, 'duration': 25, 'started_by': None})
+
+    def post(self, request, group_id):
+        from apps.groups.models import StudyGroup, GroupMembership
+        get_object_or_404(StudyGroup, pk=group_id)
+        if not GroupMembership.objects.filter(user=request.user, group_id=group_id).exists():
+            return Response({'error': 'Must be a group member'}, status=403)
+        action = request.data.get('action', 'start')
+        from apps.chat.models import FocusRoom
+        from django.utils import timezone
+        if action == 'start':
+            duration = int(request.data.get('duration', 25))
+            fr, _ = FocusRoom.objects.update_or_create(
+                group_id=group_id,
+                defaults={'duration': duration, 'started_at': timezone.now(), 'started_by': request.user},
+            )
+            _publish_ably(f'chat-{group_id}', 'focus_start', {
+                'started_at': fr.started_at.isoformat(),
+                'duration': fr.duration,
+                'started_by': request.user.id,
+            })
+            return Response({'active': True, 'started_at': fr.started_at.isoformat(), 'duration': fr.duration, 'started_by': request.user.id})
+        else:
+            FocusRoom.objects.filter(group_id=group_id).delete()
+            _publish_ably(f'chat-{group_id}', 'focus_stop', {'stopped_by': request.user.id})
+            return Response({'active': False})

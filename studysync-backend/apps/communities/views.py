@@ -65,6 +65,28 @@ class PostDetailView(generics.RetrieveAPIView):
     queryset = Post.objects.select_related('author', 'author__profile', 'community')
 
 
+class PostDeleteView(generics.DestroyAPIView):
+    queryset = Post.objects.all()
+
+    def get_object(self):
+        post = generics.get_object_or_404(Post, pk=self.kwargs['pk'])
+        if post.author != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only delete your own posts.")
+        return post
+
+
+class CommentDeleteView(generics.DestroyAPIView):
+    queryset = Comment.objects.all()
+
+    def get_object(self):
+        comment = generics.get_object_or_404(Comment, pk=self.kwargs['pk'])
+        if comment.author != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You can only delete your own comments.")
+        return comment
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def vote_post(request, pk):

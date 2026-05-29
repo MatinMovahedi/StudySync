@@ -1,9 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { VoteButton } from './VoteButton';
-import { createComment, voteComment, type Comment } from '../../lib/api/communities';
+import { createComment, deleteComment, type Comment } from '../../lib/api/communities';
+import { useAuthStore } from '../../lib/store/authStore';
 import { formatRelativeTime } from '../../lib/utils/format';
 import { fadeInUp } from '../../lib/utils/animations';
 
@@ -18,6 +20,7 @@ function CommentItem({ comment, postId, depth = 0 }: CommentItemProps) {
   const [body, setBody] = useState('');
   const [anon, setAnon] = useState(false);
   const qc = useQueryClient();
+  const { user } = useAuthStore();
 
   const replyMutation = useMutation({
     mutationFn: () => createComment(postId, { body, parent: comment.id, is_anonymous: anon }),
@@ -27,6 +30,13 @@ function CommentItem({ comment, postId, depth = 0 }: CommentItemProps) {
       qc.invalidateQueries({ queryKey: ['post-comments', postId] });
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteComment(comment.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['post-comments', postId] }),
+  });
+
+  const isOwn = user?.id === comment.author.id;
 
   const authorName = comment.author.id === null
     ? 'Anonymous Student'
@@ -55,10 +65,22 @@ function CommentItem({ comment, postId, depth = 0 }: CommentItemProps) {
           <VoteButton id={comment.id} score={comment.score} userVote={comment.user_vote} type="comment" />
           {depth < 2 && (
             <button
+              type="button"
               onClick={() => setShowReply(r => !r)}
               className="text-[11px] text-text-muted hover:text-text-secondary transition-colors"
             >
               Reply
+            </button>
+          )}
+          {isOwn && (
+            <button
+              type="button"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              aria-label="Delete comment"
+              className="text-text-muted hover:text-rose-400 transition-colors disabled:opacity-50 ml-auto"
+            >
+              <Trash2 className="w-3 h-3" />
             </button>
           )}
         </div>

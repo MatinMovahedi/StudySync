@@ -8,7 +8,7 @@ import { Avatar } from '../ui/avatar';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { useAuthStore } from '../../lib/store/authStore';
 import { formatRelativeTime } from '../../lib/utils/format';
-import { markRead, markAllRead } from '../../lib/api/notifications';
+import { markRead, markAllRead, deleteNotification, clearNotifications } from '../../lib/api/notifications';
 import { globalSearch, SearchResults } from '../../lib/api/search';
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -22,7 +22,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export function Topbar() {
   const { user } = useAuthStore();
-  const { notifications, unreadCount, markRead: markReadStore, markAllRead: markAllStore } = useNotificationStore();
+  const { notifications, unreadCount, markRead: markReadStore, markAllRead: markAllStore, removeNotification, clearRead } = useNotificationStore();
   const notifRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -72,6 +72,17 @@ export function Topbar() {
   const handleMarkAll = async () => {
     markAllStore();
     try { await markAllRead(); } catch {}
+  };
+
+  const handleDismiss = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    removeNotification(id);
+    try { await deleteNotification(id); } catch {}
+  };
+
+  const handleClearRead = async () => {
+    clearRead();
+    try { await clearNotifications(); } catch {}
   };
 
   const hasResults = results && (results.groups.length + results.resources.length + results.communities.length) > 0;
@@ -214,6 +225,11 @@ export function Topbar() {
                         Mark all read
                       </button>
                     )}
+                    {notifications.some(n => n.is_read) && (
+                      <button type="button" onClick={handleClearRead} className="text-xs text-text-muted hover:text-rose-400 transition-colors">
+                        Clear read
+                      </button>
+                    )}
                     <button type="button" aria-label="Close notifications" onClick={() => setShowNotifs(false)}>
                       <X className="w-3.5 h-3.5 text-text-muted hover:text-text-secondary transition-colors" />
                     </button>
@@ -227,14 +243,24 @@ export function Topbar() {
                       <div
                         key={n.id}
                         onClick={() => handleMarkRead(n.id)}
-                        className={`px-4 py-3 hover:bg-surface-elevated transition-colors cursor-pointer border-b border-surface-border last:border-0 ${!n.is_read ? 'bg-brand/8' : ''}`}
+                        className={`px-4 py-3 hover:bg-surface-elevated transition-colors cursor-pointer border-b border-surface-border last:border-0 group/notif ${!n.is_read ? 'bg-brand/8' : ''}`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-text-primary">{n.title}</p>
                             <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{n.body}</p>
                           </div>
-                          {!n.is_read && <div className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0 mt-1" />}
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {!n.is_read && <div className="w-1.5 h-1.5 rounded-full bg-brand" />}
+                            <button
+                              type="button"
+                              aria-label="Dismiss notification"
+                              onClick={(e) => handleDismiss(e, n.id)}
+                              className="opacity-0 group-hover/notif:opacity-100 text-text-muted hover:text-rose-400 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-[10px] text-text-muted mt-1">{formatRelativeTime(n.created_at)}</p>
                       </div>

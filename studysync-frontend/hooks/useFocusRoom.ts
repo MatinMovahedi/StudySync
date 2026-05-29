@@ -1,6 +1,6 @@
 'use client';
-import { useState, useCallback } from 'react';
-import { useWebSocket } from './useWebSocket';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import api from '../lib/api/client';
 
 export interface FocusRoomState {
   active: boolean;
@@ -9,7 +9,7 @@ export interface FocusRoomState {
   startedBy: number | null;
 }
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
+const ABLY_KEY = process.env.NEXT_PUBLIC_ABLY_KEY ?? null;
 
 export function useFocusRoom(groupId: number | null) {
   const [focusState, setFocusState] = useState<FocusRoomState>({
@@ -18,36 +18,68 @@ export function useFocusRoom(groupId: number | null) {
     duration: 25,
     startedBy: null,
   });
+  const ablyRef = useRef<import('ably').Realtime | null>(null);
+  const channelRef = useRef<import('ably').RealtimeChannel | null>(null);
 
-  const wsUrl = groupId ? `${WS_BASE}/ws/chat/${groupId}/` : null;
+  // Load initial state from REST
+  useEffect(() => {
+    if (!groupId) return;
+    api.get(`/api/chat/${groupId}/focus/`).then(r => {
+      setFocusState({
+        active: r.data.active,
+        startedAt: r.data.started_at,
+        duration: r.data.duration ?? 25,
+        startedBy: r.data.started_by,
+      });
+    }).catch(() => {});
+  }, [groupId]);
 
-  const { send } = useWebSocket(wsUrl, {
-    onMessage: useCallback((msg: { type: string; data?: Record<string, unknown> }) => {
-      if (msg.type === 'focus_start') {
-        setFocusState({
-          active: true,
-          startedAt: msg.data?.started_at as string ?? new Date().toISOString(),
-          duration: msg.data?.duration as number ?? 25,
-          startedBy: msg.data?.started_by as number ?? null,
-        });
-      } else if (msg.type === 'focus_stop') {
+  // Ably subscription for real-time sync
+  useEffect(() => {
+    if (!ABLY_KEY || !groupId) return;
+    let cancelled = false;
+
+    (async () => {
+      const Ably = await import('ably');
+      if (cancelled) return;
+      const client = new Ably.Realtime({ key: ABLY_KEY });
+      ablyRef.current = client;
+      const channel = client.channels.get(`chat-${groupId}`);
+      channelRef.current = channel;
+
+      channel.subscribe('focus_start', (msg) => {
+        if (cancelled) return;
+        const d = msg.data as { started_at: string; duration: number; started_by: number };
+        setFocusState({ active: true, startedAt: d.started_at, duration: d.duration, startedBy: d.started_by });
+      });
+
+      channel.subscribe('focus_stop', (msg) => {
+        if (cancelled) return;
+        void msg;
         setFocusState({ active: false, startedAt: null, duration: 25, startedBy: null });
-      } else if (msg.type === 'focus_sync') {
-        const d = msg.data as { started_at: string; duration: number; started_by: number } | undefined;
-        if (d) {
-          setFocusState({ active: true, startedAt: d.started_at, duration: d.duration, startedBy: d.started_by });
-        }
-      }
-    }, []),
-  });
+      });
+    })();
 
-  const startFocus = useCallback((duration = 25) => {
-    send({ type: 'focus_start', duration });
-  }, [send]);
+    return () => {
+      cancelled = true;
+      channelRef.current?.unsubscribe();
+      ablyRef.current?.close();
+      ablyRef.current = null;
+      channelRef.current = null;
+    };
+  }, [groupId]);
 
-  const stopFocus = useCallback(() => {
-    send({ type: 'focus_stop' });
-  }, [send]);
+  const startFocus = useCallback(async (duration = 25) => {
+    if (!groupId) return;
+    const r = await api.post(`/api/chat/${groupId}/focus/`, { action: 'start', duration });
+    setFocusState({ active: true, startedAt: r.data.started_at, duration: r.data.duration, startedBy: r.data.started_by });
+  }, [groupId]);
+
+  const stopFocus = useCallback(async () => {
+    if (!groupId) return;
+    await api.post(`/api/chat/${groupId}/focus/`, { action: 'stop' });
+    setFocusState({ active: false, startedAt: null, duration: 25, startedBy: null });
+  }, [groupId]);
 
   return { focusState, startFocus, stopFocus };
 }
