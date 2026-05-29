@@ -4,6 +4,7 @@ from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, status
+from django.db import models as db_models
 from .models import AIConversation, FlashCard, StudyPlan
 from .serializers import AIConversationSerializer, FlashCardSerializer, StudyPlanSerializer
 from .openai_client import chat_completion_stream, generate_quiz, generate_flashcards, summarize_notes, explain_concept, generate_study_plan, generate_diagram
@@ -74,9 +75,18 @@ class FlashcardListView(generics.ListAPIView):
         return FlashCard.objects.filter(user=self.request.user)
 
 
-class FlashcardDetailView(generics.DestroyAPIView):
+class FlashcardDetailView(generics.RetrieveDestroyAPIView):
+    serializer_class = FlashCardSerializer
+
     def get_queryset(self):
         return FlashCard.objects.filter(user=self.request.user)
+
+    def patch(self, request, *args, **kwargs):
+        card = self.get_object()
+        card.review_count = db_models.F('review_count') + 1
+        card.save(update_fields=['review_count'])
+        card.refresh_from_db()
+        return Response(FlashCardSerializer(card).data)
 
 
 class SummarizeView(APIView):

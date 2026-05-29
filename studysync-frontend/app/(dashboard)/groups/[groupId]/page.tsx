@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Users, MessageSquare, Calendar, Lock, ArrowRight, UserMinus, PenLine } from 'lucide-react';
+import { Users, MessageSquare, Calendar, Lock, ArrowRight, UserMinus, PenLine, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { getGroup, getGroupMembers, joinGroup, leaveGroup } from '../../../../lib/api/groups';
@@ -64,7 +64,20 @@ export default function GroupDetailPage() {
                 </div>
                 {group.description && <p className="text-sm text-text-secondary mt-2">{group.description}</p>}
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {group.invite_code && (
+                  <button
+                    type="button"
+                    title="Copy invite link"
+                    onClick={() => {
+                      const url = `${window.location.origin}/groups/join/${group.invite_code}`;
+                      navigator.clipboard.writeText(url).then(() => toast.success('Invite link copied!')).catch(() => {});
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-md border border-surface-border text-text-muted hover:text-text-primary hover:bg-surface-elevated transition-colors"
+                  >
+                    <Link2 className="w-4 h-4" />
+                  </button>
+                )}
                 {group.is_member ? (
                   group.user_role !== 'admin' && (
                     confirmLeave ? (

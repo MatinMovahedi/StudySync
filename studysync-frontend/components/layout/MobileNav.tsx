@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Brain, User, MoreHorizontal, X,
   CalendarCheck, BarChart2, BookOpen, Library, GraduationCap,
-  Hash, Timer, MapPin, Trophy, CalendarDays, Settings,
+  Hash, Timer, MapPin, Trophy, CalendarDays, Settings, Headphones,
 } from 'lucide-react';
 import { cn } from '../../lib/utils/cn';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +25,7 @@ const more = [
   { href: '/grades',       icon: BookOpen,        label: 'Grades'       },
   { href: '/resources',    icon: Library,         label: 'Resources'    },
   { href: '/tutoring',     icon: GraduationCap,   label: 'Tutoring'     },
+  { href: '/focus',        icon: Headphones,      label: 'Focus Rooms'  },
   { href: '/spots',        icon: MapPin,          label: 'Study Spots'  },
   { href: '/leaderboard',  icon: Trophy,          label: 'Leaderboard'  },
   { href: '/profile',      icon: User,            label: 'Profile'      },

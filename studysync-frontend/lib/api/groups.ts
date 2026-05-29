@@ -52,3 +52,19 @@ export const deleteSnapshot = (id: number, snapId: number) =>
   api.delete(`/api/groups/${id}/whiteboard/snapshots/${snapId}/`);
 export const restoreSnapshot = (id: number, snapId: number) =>
   api.post(`/api/groups/${id}/whiteboard/snapshots/${snapId}/restore/`).then(r => r.data as { state: Record<string, unknown>; updated_at: string });
+
+export interface GroupInviteInfo {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  member_count: number;
+  max_members: number;
+  avatar_color: string;
+}
+
+export const getGroupByInviteCode = (code: string) =>
+  api.get(`/api/groups/invite/${code}/`).then(r => r.data as GroupInviteInfo);
+
+export const joinGroupByInviteCode = (code: string) =>
+  api.post(`/api/groups/invite/${code}/`).then(r => r.data as { message: string; group_id: number });

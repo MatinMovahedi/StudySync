@@ -14,6 +14,7 @@ export interface Resource {
   upvotes: number;
   created_by_name: string | null;
   user_voted: boolean;
+  is_saved: boolean;
   created_at: string;
 }
 
@@ -22,6 +23,7 @@ export const getResources = (params?: {
   category?: ResourceCategory;
   tag?: string;
   sort?: 'top' | 'new';
+  saved?: boolean;
 }): Promise<{ results: Resource[] }> =>
   api.get('/api/resources/', { params }).then(r => r.data);
 
@@ -38,3 +40,6 @@ export const createResource = (data: {
 
 export const voteResource = (id: number): Promise<{ voted: boolean; upvotes: number }> =>
   api.post(`/api/resources/${id}/vote/`).then(r => r.data);
+
+export const saveResource = (id: number): Promise<{ saved: boolean }> =>
+  api.post(`/api/resources/${id}/save/`).then(r => r.data);

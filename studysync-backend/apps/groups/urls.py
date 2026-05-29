@@ -12,4 +12,5 @@ urlpatterns = [
     path('<int:pk>/whiteboard/snapshots/', views.WhiteboardSnapshotView.as_view(), name='whiteboard-snapshots'),
     path('<int:pk>/whiteboard/snapshots/<int:snap_id>/', views.WhiteboardSnapshotDetailView.as_view(), name='whiteboard-snapshot-detail'),
     path('<int:pk>/whiteboard/snapshots/<int:snap_id>/restore/', views.WhiteboardSnapshotDetailView.as_view(), name='whiteboard-snapshot-restore'),
+    path('invite/<str:invite_code>/', views.GroupJoinByInviteView.as_view(), name='group-join-invite'),
 ]

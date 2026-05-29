@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Library, Plus, ChevronUp, ExternalLink, X, Search } from 'lucide-react';
-import { getResources, createResource, voteResource, Resource, ResourceCategory } from '../../../lib/api/resources';
+import { Library, Plus, ChevronUp, ExternalLink, X, Search, Bookmark, BookmarkCheck } from 'lucide-react';
+import { getResources, createResource, voteResource, saveResource, Resource, ResourceCategory } from '../../../lib/api/resources';
 import { GlassCard } from '../../../components/shared/GlassCard';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { staggerContainer, staggerItem, popIn } from '../../../lib/utils/animations';
@@ -35,12 +35,18 @@ function ResourceCard({ resource }: { resource: Resource }) {
     mutationFn: () => voteResource(resource.id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['resources'] }),
   });
+  const saveMutation = useMutation({
+    mutationFn: () => saveResource(resource.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resources'] }),
+  });
 
   return (
     <GlassCard className="p-4" hover={false}>
       <div className="flex gap-4">
         <div className="flex flex-col items-center gap-1 pt-0.5">
           <button
+            type="button"
+            aria-label="Upvote resource"
             onClick={() => voteMutation.mutate()}
             className={`p-1.5 rounded-md transition-colors ${resource.user_voted ? 'text-brand bg-brand/10' : 'text-text-muted hover:text-brand hover:bg-brand/10'}`}
           >
@@ -51,16 +57,22 @@ function ResourceCard({ resource }: { resource: Resource }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 flex-wrap">
             <h3 className="text-text-primary font-semibold">{resource.title}</h3>
-            <span className={`text-xs px-2 py-0.5 rounded-full text-white ${CATEGORY_COLORS[resource.category] ?? 'theme-muted'}`} style={{ backgroundColor: 'var(--theme-color, #6b7280)', opacity: 0.9 }}>
-              <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-surface-elevated text-text-secondary border border-surface-border`}>
-                {resource.category}
-              </span>
+            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-surface-elevated text-text-secondary border border-surface-border">
+              {resource.category}
             </span>
             {resource.url && (
-              <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-brand hover:text-brand/80 transition-colors">
+              <a href={resource.url} target="_blank" rel="noopener noreferrer" aria-label="Open resource link" className="text-brand hover:text-brand/80 transition-colors">
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             )}
+            <button
+              type="button"
+              aria-label={resource.is_saved ? 'Unsave resource' : 'Save resource'}
+              onClick={() => saveMutation.mutate()}
+              className={`ml-auto transition-colors ${resource.is_saved ? 'text-brand' : 'text-text-muted hover:text-text-secondary'}`}
+            >
+              {resource.is_saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+            </button>
           </div>
           <p className="text-text-muted text-sm mt-1 line-clamp-2">{resource.description}</p>
           {resource.tags.length > 0 && (
@@ -103,7 +115,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
         <GlassCard className="p-6" hover={false}>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-text-primary font-semibold text-lg">Share Resource</h2>
-            <button onClick={onClose} className="p-1.5 rounded-md hover:bg-surface-elevated text-text-muted transition-colors">
+            <button type="button" aria-label="Close" onClick={onClose} className="p-1.5 rounded-md hover:bg-surface-elevated text-text-muted transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -134,6 +146,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
               onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
             />
             <select
+              aria-label="Category"
               className="w-full bg-surface-elevated border border-surface-border rounded-md px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
               value={form.category}
               onChange={e => setForm(p => ({ ...p, category: e.target.value as ResourceCategory }))}
@@ -163,11 +176,12 @@ export default function ResourcesPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<ResourceCategory | ''>('');
   const [sort, setSort] = useState<'top' | 'new'>('top');
+  const [savedOnly, setSavedOnly] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['resources', search, category, sort],
-    queryFn: () => getResources({ search: search || undefined, category: category || undefined, sort }),
+    queryKey: ['resources', search, category, sort, savedOnly],
+    queryFn: () => getResources({ search: search || undefined, category: category || undefined, sort, saved: savedOnly || undefined }),
   });
 
   const resources: Resource[] = data?.results ?? (Array.isArray(data) ? data : []);
@@ -186,6 +200,7 @@ export default function ResourcesPage() {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-brand/90 transition-colors"
           >
@@ -206,16 +221,26 @@ export default function ResourcesPage() {
           </div>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setSort('top')}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${sort === 'top' ? 'bg-brand text-white' : 'bg-surface-card border border-surface-border text-text-muted hover:text-text-primary'}`}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${sort === 'top' && !savedOnly ? 'bg-brand text-white' : 'bg-surface-card border border-surface-border text-text-muted hover:text-text-primary'}`}
             >
               Top
             </button>
             <button
+              type="button"
               onClick={() => setSort('new')}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${sort === 'new' ? 'bg-brand text-white' : 'bg-surface-card border border-surface-border text-text-muted hover:text-text-primary'}`}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${sort === 'new' && !savedOnly ? 'bg-brand text-white' : 'bg-surface-card border border-surface-border text-text-muted hover:text-text-primary'}`}
             >
               New
+            </button>
+            <button
+              type="button"
+              onClick={() => setSavedOnly(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${savedOnly ? 'bg-brand text-white' : 'bg-surface-card border border-surface-border text-text-muted hover:text-text-primary'}`}
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              Saved
             </button>
           </div>
         </motion.div>
@@ -223,6 +248,7 @@ export default function ResourcesPage() {
         <motion.div variants={staggerItem} className="flex flex-wrap gap-2 mb-6">
           {CATEGORIES.map(c => (
             <button
+              type="button"
               key={c.value}
               onClick={() => setCategory(c.value as ResourceCategory | '')}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${category === c.value ? 'bg-brand text-white' : 'bg-surface-card border border-surface-border text-text-muted hover:text-text-primary'}`}

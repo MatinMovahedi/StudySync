@@ -71,6 +71,36 @@ class LeaveGroupView(APIView):
         return Response({'message': 'Left group'})
 
 
+class GroupJoinByInviteView(APIView):
+    permission_classes = []
+
+    def get(self, request, invite_code):
+        group = get_object_or_404(
+            StudyGroup.objects.annotate(member_count=Count('memberships')),
+            invite_code=invite_code,
+        )
+        return Response({
+            'id': group.id,
+            'name': group.name,
+            'description': group.description,
+            'category': group.category,
+            'member_count': group.member_count,
+            'max_members': group.max_members,
+            'avatar_color': group.avatar_color,
+        })
+
+    def post(self, request, invite_code):
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        group = get_object_or_404(StudyGroup, invite_code=invite_code)
+        if GroupMembership.objects.filter(user=request.user, group=group).exists():
+            return Response({'error': 'Already a member'}, status=status.HTTP_400_BAD_REQUEST)
+        if group.memberships.count() >= group.max_members:
+            return Response({'error': 'Group is full'}, status=status.HTTP_400_BAD_REQUEST)
+        GroupMembership.objects.create(user=request.user, group=group, role='member')
+        return Response({'message': 'Joined successfully', 'group_id': group.id})
+
+
 class GroupMembersView(generics.ListAPIView):
     serializer_class = GroupMembershipSerializer
 

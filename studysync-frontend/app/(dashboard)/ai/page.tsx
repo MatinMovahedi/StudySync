@@ -6,7 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { GlassCard } from '../../../components/shared/GlassCard';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { streamAIChat, generateQuiz, generateFlashcards, summarizeNotes, explainConcept, deleteFlashcard } from '../../../lib/api/ai';
+import { streamAIChat, generateQuiz, generateFlashcards, summarizeNotes, explainConcept, deleteFlashcard, reviewFlashcard } from '../../../lib/api/ai';
 import { staggerContainer, staggerItem } from '../../../lib/utils/animations';
 import { QuizQuestion, FlashCard } from '../../../lib/types';
 
@@ -61,6 +61,104 @@ function FlipCard({ card, onDelete }: { card: FlashCard; onDelete: () => void })
   );
 }
 
+function ReviewMode({ cards, onExit }: { cards: FlashCard[]; onExit: () => void }) {
+  const [queue, setQueue] = useState([...cards]);
+  const [current, setCurrent] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [mastered, setMastered] = useState(0);
+
+  const total = cards.length;
+  const card = queue[current];
+
+  if (queue.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="text-5xl mb-4">🎉</div>
+        <h2 className="text-xl font-bold text-text-primary mb-2">Review Complete!</h2>
+        <p className="text-text-muted mb-6">You mastered {mastered} of {total} cards</p>
+        <button type="button" onClick={onExit} className="px-6 py-2 bg-brand text-white rounded-md hover:bg-brand-dark transition-colors text-sm font-medium">
+          Back to Flashcards
+        </button>
+      </div>
+    );
+  }
+
+  const handleGotIt = () => {
+    reviewFlashcard(card.id).catch(() => {});
+    setMastered(m => m + 1);
+    setFlipped(false);
+    const newQueue = queue.filter((_, i) => i !== current);
+    setQueue(newQueue);
+    setCurrent(c => (newQueue.length > 0 ? c % newQueue.length : 0));
+  };
+
+  const handleTryAgain = () => {
+    setFlipped(false);
+    const newQueue = [...queue.filter((_, i) => i !== current), card];
+    setQueue(newQueue);
+    setCurrent(c => c >= queue.length - 1 ? 0 : c);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={onExit} className="text-xs text-text-muted hover:text-text-secondary transition-colors">
+          ← Back to cards
+        </button>
+        <span className="text-xs text-text-muted">{mastered}/{total} mastered · {queue.length} remaining</span>
+      </div>
+      <div className="w-full bg-surface-elevated rounded-full h-1">
+        <div className="bg-brand h-1 rounded-full transition-all duration-500" style={{ width: `${(mastered / total) * 100}%` }} />
+      </div>
+
+      <div className="relative h-64 cursor-pointer" style={{ perspective: 1000 }} onClick={() => setFlipped(f => !f)}>
+        <motion.div
+          className="absolute inset-0"
+          style={{ transformStyle: 'preserve-3d' }}
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.45, ease: 'easeInOut' }}
+        >
+          <div className="absolute inset-0 bg-surface-card border border-surface-border rounded-md flex flex-col items-center justify-center p-8 text-center" style={{ backfaceVisibility: 'hidden' }}>
+            <div className="text-[10px] text-text-muted uppercase tracking-wider mb-4">Question</div>
+            <p className="text-text-primary font-medium">{card.front}</p>
+            <div className="mt-6 text-xs text-text-muted">Click to reveal answer</div>
+          </div>
+          <div className="absolute inset-0 bg-emerald-950/40 border border-emerald-700/40 rounded-md flex flex-col items-center justify-center p-8 text-center" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+            <div className="text-[10px] text-brand uppercase tracking-wider mb-4">Answer</div>
+            <p className="text-text-primary">{card.back}</p>
+          </div>
+        </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {flipped && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="flex gap-3"
+          >
+            <button
+              type="button"
+              onClick={handleTryAgain}
+              className="flex-1 py-3 rounded-md border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors font-medium text-sm"
+            >
+              ✗ Try again
+            </button>
+            <button
+              type="button"
+              onClick={handleGotIt}
+              className="flex-1 py-3 rounded-md bg-brand text-white hover:bg-brand-dark transition-colors font-medium text-sm"
+            >
+              ✓ Got it
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function AIPage() {
   const [tab, setTab] = useState<Tab>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -79,6 +177,7 @@ export default function AIPage() {
   const [flashTopic, setFlashTopic] = useState('');
   const [flashCards, setFlashCards] = useState<FlashCard[]>([]);
   const [flashLoading, setFlashLoading] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
 
   const [notes, setNotes] = useState('');
   const [summary, setSummary] = useState('');
@@ -338,34 +437,43 @@ export default function AIPage() {
             {/* FLASHCARDS TAB */}
             {tab === 'flashcards' && (
               <div className="space-y-5">
-                <div className="bg-surface-card border border-surface-border rounded-md p-5">
-                  <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-text-secondary" /> Flashcard Generator
-                  </h2>
-                  <div className="flex gap-3">
-                    <input value={flashTopic} onChange={e => setFlashTopic(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleGenFlash()}
-                      placeholder="Topic to generate flashcards for..."
-                      className={`flex-1 ${INPUT_CLASS}`} />
-                    <Button onClick={handleGenFlash} loading={flashLoading} disabled={!flashTopic}>Generate</Button>
-                  </div>
-                  <p className="text-xs text-text-muted mt-2">Click any card to flip and reveal the answer</p>
-                </div>
-                {flashLoading && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i)=><Skeleton key={i} className="h-48" />)}</div>}
-                {flashCards.length > 0 && !flashLoading && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {flashCards.map((c) => (
-                      <FlipCard
-                        key={c.id}
-                        card={c}
-                        onDelete={() => {
-                          deleteFlashcard(c.id).then(() =>
-                            setFlashCards(prev => prev.filter(f => f.id !== c.id))
-                          ).catch(() => {});
-                        }}
-                      />
-                    ))}
-                  </div>
+                {reviewMode && flashCards.length > 0 ? (
+                  <ReviewMode cards={flashCards} onExit={() => setReviewMode(false)} />
+                ) : (
+                  <>
+                    <div className="bg-surface-card border border-surface-border rounded-md p-5">
+                      <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-text-secondary" /> Flashcard Generator
+                      </h2>
+                      <div className="flex gap-3">
+                        <input value={flashTopic} onChange={e => setFlashTopic(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleGenFlash()}
+                          placeholder="Topic to generate flashcards for..."
+                          className={`flex-1 ${INPUT_CLASS}`} />
+                        <Button onClick={handleGenFlash} loading={flashLoading} disabled={!flashTopic}>Generate</Button>
+                        {flashCards.length > 0 && (
+                          <Button variant="secondary" onClick={() => setReviewMode(true)}>Review</Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mt-2">Click any card to flip and reveal the answer</p>
+                    </div>
+                    {flashLoading && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i)=><Skeleton key={i} className="h-48" />)}</div>}
+                    {flashCards.length > 0 && !flashLoading && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {flashCards.map((c) => (
+                          <FlipCard
+                            key={c.id}
+                            card={c}
+                            onDelete={() => {
+                              deleteFlashcard(c.id).then(() =>
+                                setFlashCards(prev => prev.filter(f => f.id !== c.id))
+                              ).catch(() => {});
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
